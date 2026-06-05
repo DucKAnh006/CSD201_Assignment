@@ -1,25 +1,16 @@
 package pikachu.ui;
 
 import pikachu.logic.GameLogic;
+import pikachu.logic.PokemonNode;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import javax.swing.JOptionPane;
 
-/*
-Giac Flow trai phai (y)
-Trong Logic swap findpath
-Long logic create check_matrix
-Duy ui thiet ke giao dien menu, thanh thgian, vẽ dường đi, diểm,....
-Dung flow       tren xuong x
- */
 public class InGame extends JPanel {
 
     private MainFrame parent;
@@ -32,16 +23,13 @@ public class InGame extends JPanel {
     private int maxLevel = 9;
 
     private int rows, cols;
-    private int totalRows, totalCols;
-    private PokemonButton firstSelected = null;
+    private PokemonNode firstSelected = null;
 
     public InGame(int x, int y, MainFrame parent) {
         this.parent = parent;
         this.rows = x;
         this.cols = y;
         this.numberOfImage = x * y;
-        this.totalRows = x + 2;
-        this.totalCols = y + 2;
 
         this.gameLogic = new GameLogic(x, y);
         gamePanel.setLayout(new GridLayout(x, y, 0, 0));
@@ -81,7 +69,7 @@ public class InGame extends JPanel {
             }
 
             int currentImgID = matrix[row + 1][col + 1];
-            PokemonButton btn = new PokemonButton(row, col, currentImgID);
+            PokemonNode btn = new PokemonNode(row, col, currentImgID);
             if (currentImgID != -1) {
                 btn.setIcon(pieceIcons[currentImgID]);
             } else {
@@ -97,7 +85,7 @@ public class InGame extends JPanel {
             gamePanel.add(btn);
 
             btn.addActionListener(e -> {
-                PokemonButton currentClick = (PokemonButton) e.getSource();
+                PokemonNode currentClick = (PokemonNode) e.getSource();
 
                 if (firstSelected == null) {
                     firstSelected = currentClick;
@@ -110,9 +98,7 @@ public class InGame extends JPanel {
                     int id2 = currentClick.getImageID();
 
                     if (id1 == id2) {
-                        boolean canConnect = gameLogic.findPath(
-                                firstSelected.getRow(), firstSelected.getCol(),
-                                currentClick.getRow(), currentClick.getCol());
+                        boolean canConnect = gameLogic.findPath( firstSelected, currentClick);
                         if (canConnect) {
                             gameLogic.updateMatrix(firstSelected.getRow() + 1, firstSelected.getCol() + 1, currentClick.getRow() + 1, currentClick.getCol() + 1, currentLevel);
                             firstSelected.setVisible(false);

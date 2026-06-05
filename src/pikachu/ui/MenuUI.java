@@ -35,6 +35,8 @@ public class MenuUI extends JPanel {
             thoat
             
         */
+
+        // testing
         JButton b = new JButton();
         this.add(b);
         b.addActionListener(l -> {

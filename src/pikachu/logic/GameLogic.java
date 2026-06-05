@@ -76,7 +76,7 @@ public class GameLogic {
     /**
      * Trong
      */
-    public boolean findPath(int x1, int y1, int x2, int y2) {
+    public boolean findPath(PokemonNode pokemon1, PokemonNode pokemon2) {
         // cung nam tren 1 truc
         // kiem theo hinh chu z
         // kiem theo hinh chu u
