@@ -40,7 +40,7 @@ public class MenuUI extends JPanel {
         JButton b = new JButton();
         this.add(b);
         b.addActionListener(l -> {
-            InGame game = new InGame(2, 2, parent);
+            InGame game = new InGame(3, 2, parent);
             parent.switchPanel(game);
         });
     }
