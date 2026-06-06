@@ -6,6 +6,8 @@ package pikachu.logic;
 
 import pikachu.flow.Flows;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -117,22 +119,48 @@ public class GameLogic {
      * Trong
      */
     public int[][] swapMatrix() {
-        for (int i = 0; i < rows + 2; i++) {
-            for (int j = 0; j < cols + 2; j++) {
+    
+        // Store all remaining Pokemon IDs that are still available on the board
+        ArrayList<Integer> validPokemonIds = new ArrayList<>();
+
+        for (int i = 1; i <= rows; i++) {
+            for (int j = 1; j <= cols; j++) {
+                
                 if (matrix[i][j] != -1) {
-                    matrix[i][j] = 4;
+                    validPokemonIds.add(matrix[i][j]);
                 }
             }
         }
+
+       
+        // Randomly shuffle the remaining Pokemon IDs
+        Collections.shuffle(validPokemonIds);
+
+        // Put the shuffled Pokemon IDs back into the available cells
+        int index = 0;
+        for (int i = 1; i <= rows; i++) {
+            for (int j = 1; j <= cols; j++) {
+                // Fill only cells that are still active
+                if (matrix[i][j] != -1) {
+                    matrix[i][j] = validPokemonIds.get(index);
+                    index++;
+                }
+            }
+        }
+
+        // If the shuffled board has no valid moves, shuffle again
+        if (!checkValidMatrix()){
+            swapMatrix();
+        }
+
+        // Return the updated board
         return matrix;
     }
 
     /**
      * Trong
      */
-    /**
-     * Trong
-     */
+
     public boolean findPath(PokemonNode pokemon1, PokemonNode pokemon2) {
 
         // 4 corresponding movement directions: Up, Down, Left, Right
