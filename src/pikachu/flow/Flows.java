@@ -6,7 +6,7 @@ package pikachu.flow;
 
 /**
  *
- * @author ADMIN
+ * @author Dung and Giac
  */
 public class Flows {
 
@@ -14,7 +14,8 @@ public class Flows {
     }
 
     /**
-     * Dung
+     *
+     * @author Dung
      */
     public int[][] shiftDown(int[][] matrix) {
         return matrix;
@@ -33,6 +34,10 @@ public class Flows {
         return matrix;
     }
 
+    /**
+     *
+     * @author Dung and Giac
+     */
     /**
      * ShiftLeft - Compacts all non-zero elements in each row to the left.
      * Zeros (emptry cells) are pushed to the rightmost positions.
@@ -105,7 +110,53 @@ public class Flows {
         return matrix;
     }
 
+    /**
+     * ShiftInwardX - Compacts elements horizontally towards the vertical center
+     * line.
+     * - Left helf of the matrix shifts RIGHTWARDS towards the center.
+     * - Right half of the matrix shifts LEFTWARDS towards the center.
+     * Assumes the matrix has an even number of columns for perfact symmetry.
+     * 
+     * @param matrix The 2D array representing the game board.
+     * @return The updated matrix after applying the inward horizontal flow
+     *         mechanic.
+     */
     public int[][] shiftInwardX(int[][] matrix) {
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        int mid = cols / 2; // Establish the vertical boundary line
+
+        // Process each row independently as the flow moves horizontally
+        for (int r = 0; r < rows; r++) {
+
+            // SUB-MECHANIC 1: Compact the left helf RIGHTWARDS (towards the center)
+            // Start writing from the column right next to center line (mid - 1)
+            int writePtrLeft = mid - 1;
+            // Traverse backwards from the center line to the left border
+            for (int c = mid - 1; c >= 0; c--) {
+                if (matrix[r][c] != 0) {
+                    matrix[r][writePtrLeft] = matrix[r][c];
+                    if (writePtrLeft != c) {
+                        matrix[r][c] = 0;
+                    }
+                    writePtrLeft--; // Move the write pointer leftwards
+                }
+            }
+
+            // SUB-MECHANIC 2: Compact the right half LEFTWARDS (towards the center)
+            // Start writing from the center line (mid)
+            int writePtrRight = mid;
+            // Traverse forwards from the center line to the right border
+            for (int c = mid; c < cols; c++) {
+                if (matrix[r][c] != 0) {
+                    matrix[r][writePtrRight] = matrix[r][c];
+                    if (writePtrRight != c) {
+                        matrix[r][c] = 0;
+                    }
+                    writePtrRight++; // Move the write pointer rightwards
+                }
+            }
+        }
         return matrix;
     }
 
