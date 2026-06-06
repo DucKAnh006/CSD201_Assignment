@@ -60,6 +60,7 @@ public class InGame extends JPanel {
         gameLogic.createMatrix();
         progress = 0;
         level(gameLogic.getMatrix());
+        playSound("sound4.wav");
     }
 
     /**
@@ -68,7 +69,6 @@ public class InGame extends JPanel {
      * @param matrix The matrix representing the current game state.
      */
     private void level(int[][] matrix) {
-        playSound("sound4.wav");
         gamePanel.removeAll();
         firstSelected = null;
  
@@ -128,9 +128,6 @@ public class InGame extends JPanel {
 
                         if (canConnect) { // If the buttons can be connected, update the game state to reflect the matched pair and check for level completion
                             level(gameLogic.updateMatrix(firstSelected.getRow() + 1, firstSelected.getCol() + 1, currentClick.getRow() + 1, currentClick.getCol() + 1, currentLevel));
-                            // Hide the matched buttons and play a sound to indicate a successful match
-                            firstSelected.setVisible(false);
-                            currentClick.setVisible(false);
                             playSound("sound5.wav");
                             progress += 2; // Increment the progress by 2 for each matched pair
 
