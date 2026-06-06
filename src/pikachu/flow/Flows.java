@@ -36,7 +36,7 @@ public class Flows {
 
     /**
      *
-     * @author Dung and Giac
+     * @author Giac
      */
     /**
      * ShiftLeft - Compacts all non-zero elements in each row to the left.
@@ -208,5 +208,4 @@ public class Flows {
         }
         return matrix;
     }
-
 }
