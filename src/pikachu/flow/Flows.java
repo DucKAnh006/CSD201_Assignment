@@ -39,8 +39,9 @@ public class Flows {
      * @author Giac
      */
     /**
-     * ShiftLeft - Compacts all non-zero elements in each row to the left.
-     * Zeros (emptry cells) are pushed to the rightmost positions.
+     * ShiftLeft - Compacts all active elements (ID: 0-35) in each row to the left.
+     * Emptry cells(-1) are pushed to the rightmost positions.
+     * This boudary avoids touching the outer padding border (Index 0 and size-1).
      * 
      * @param matrix The input 2D array representing the game board.
      * @return The updated matix after applying the leftward flow mechanic.
@@ -50,19 +51,19 @@ public class Flows {
         int cols = matrix[0].length;
 
         // Iterate through each row independently
-        for (int r = 0; r < rows; r++) {
-            // Track the next available column index to write a non-zero element
-            int writePtr = 0;
+        for (int r = 1; r <= rows - 2; r++) {
+            // Track the next available column index to write a active element
+            int writePtr = 1;
 
             // Travese from left to right to find active elements
-            for (int c = 0; c < cols; c++) {
-                if (matrix[r][c] != 0) {
+            for (int c = 1; c <= cols - 2; c++) {
+                if (matrix[r][c] != -1) {
                     // Shift the element to the left compact position
                     matrix[r][writePtr] = matrix[r][c];
 
                     // If the element actually moved, set clear its previous position
                     if (writePtr != c) {
-                        matrix[r][c] = 0;
+                        matrix[r][c] = -1;
                     }
                     // Move the write pointer to the next position
                     writePtr++;
@@ -75,8 +76,9 @@ public class Flows {
     }
 
     /**
-     * ShiftRight - Compacts all non-zero elements in each row to the right.
-     * Zeros (empty cells) are pushed to the leftmost positions.
+     * ShiftRight - Compacts all active elements (ID: 0-35) in each row to the right.
+     * Empty cells (-1) are pushed to the leftmost positions.
+     * This boudary avoids touching the outer padding border (Index 0 and size-1).
      * 
      * @param matrix The input 2D array representing the game board.
      * @return The updated matrix after applying the rightward flow mechanic.
@@ -86,19 +88,19 @@ public class Flows {
         int cols = matrix[0].length;
 
         // Iterate through each row independently
-        for (int r = 0; r < rows; r++) {
-            // Track the next available column index to write a non-zero element
-            int writePtr = cols - 1;
+        for (int r = 1; r <= rows - 2; r++) {
+            // Track the next available column index to write a active element
+            int writePtr = cols - 2;
 
             // Travese from left to right to find active elements
-            for (int c = cols - 1; c >= 0; c--) {
-                if (matrix[r][c] != 0) {
+            for (int c = cols - 1; c >= 1; c--) {
+                if (matrix[r][c] != -1) {
                     // Shift the element to the right compact position
                     matrix[r][writePtr] = matrix[r][c];
 
                     // If the element actually moved, set clear its previous position
                     if (writePtr != c) {
-                        matrix[r][c] = 0;
+                        matrix[r][c] = -1;
                     }
                     // Move the write pointer to the next position
                     writePtr--;
@@ -127,17 +129,17 @@ public class Flows {
         int mid = cols / 2; // Establish the vertical boundary line
 
         // Process each row independently as the flow moves horizontally
-        for (int r = 0; r < rows; r++) {
+        for (int r = 1; r <= rows - 2; r++) {
 
             // SUB-MECHANIC 1: Compact the left helf RIGHTWARDS (towards the center)
             // Start writing from the column right next to center line (mid - 1)
             int writePtrLeft = mid - 1;
             // Traverse backwards from the center line to the left border
-            for (int c = mid - 1; c >= 0; c--) {
-                if (matrix[r][c] != 0) {
+            for (int c = mid - 1; c >= 1; c--) {
+                if (matrix[r][c] != -1) {
                     matrix[r][writePtrLeft] = matrix[r][c];
                     if (writePtrLeft != c) {
-                        matrix[r][c] = 0;
+                        matrix[r][c] = -1;
                     }
                     writePtrLeft--; // Move the write pointer leftwards
                 }
@@ -147,11 +149,11 @@ public class Flows {
             // Start writing from the center line (mid)
             int writePtrRight = mid;
             // Traverse forwards from the center line to the right border
-            for (int c = mid; c < cols; c++) {
-                if (matrix[r][c] != 0) {
+            for (int c = mid; c < cols - 1; c++) {
+                if (matrix[r][c] != -1) {
                     matrix[r][writePtrRight] = matrix[r][c];
                     if (writePtrRight != c) {
-                        matrix[r][c] = 0;
+                        matrix[r][c] = -1;
                     }
                     writePtrRight++; // Move the write pointer rightwards
                 }
@@ -177,16 +179,16 @@ public class Flows {
         int mid = cols / 2; // Establish the vertical boundary line
 
         // Process each row independently as the flow moves horizontally
-        for (int r = 0; r < rows; r++) {
+        for (int r = 1; r <= rows - 2; r++) {
             // SUB-MECHANIC 1: Compact the left half LEFTWARDS (towards column 0)
             // Start writing from the leftmost border
-            int writePtrLeft = 0;
+            int writePtrLeft = 1;
             // Traverse forwards from the left border up to the center line
-            for (int c = 0; c < mid; c++) {
-                if (matrix[r][c] != 0) {
+            for (int c = 1; c < mid; c++) {
+                if (matrix[r][c] != -1) {
                     matrix[r][writePtrLeft] = matrix[r][c];
                     if (writePtrLeft != c) {
-                        matrix[r][c] = 0;
+                        matrix[r][c] = -1;
                     }
                     writePtrLeft++; // Move the write pointer rightwards
                 }
@@ -194,13 +196,13 @@ public class Flows {
 
             // SUB-MECHANIC 2: Compact the right half RIGHTWARDS (towards the last colummn)
             // Start writing from the rightmost border
-            int writePtrRight = cols - 1;
+            int writePtrRight = cols - 2;
             // Traverse backwards from the right down to the center line
-            for (int c = cols - 1; c >= mid; c--) {
-                if (matrix[r][c] != 0) {
+            for (int c = cols - 2; c >= mid; c--) {
+                if (matrix[r][c] != -1) {
                     matrix[r][writePtrRight] = matrix[r][c];
                     if (writePtrRight != c) {
-                        matrix[r][c] = 0;
+                        matrix[r][c] = -1;
                     }
                     writePtrRight--; // Move the write pointer leftwards
                 }
