@@ -160,7 +160,52 @@ public class Flows {
         return matrix;
     }
 
+    /**
+     * ShiftOutwardX - Compacts elements horizontally away from the vertical center
+     * line.
+     * - Left half of the matrix shifts LEFTWARDS towars the left border.
+     * - Right half of the matrix shifts RIGHTWARDS towards the right border.
+     * Assumes the matrix has an even number of columns for perfact symmetry.
+     * 
+     * @param matrix The 2D array representing the game board.
+     * @return The updated matrix after applying the outward horizontal flow
+     *         mechanic.
+     */
     public int[][] shiftOutwardX(int[][] matrix) {
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        int mid = cols / 2; // Establish the vertical boundary line
+
+        // Process each row independently as the flow moves horizontally
+        for (int r = 0; r < rows; r++) {
+            // SUB-MECHANIC 1: Compact the left half LEFTWARDS (towards column 0)
+            // Start writing from the leftmost border
+            int writePtrLeft = 0;
+            // Traverse forwards from the left border up to the center line
+            for (int c = 0; c < mid; c++) {
+                if (matrix[r][c] != 0) {
+                    matrix[r][writePtrLeft] = matrix[r][c];
+                    if (writePtrLeft != c) {
+                        matrix[r][c] = 0;
+                    }
+                    writePtrLeft++; // Move the write pointer rightwards
+                }
+            }
+
+            // SUB-MECHANIC 2: Compact the right half RIGHTWARDS (towards the last colummn)
+            // Start writing from the rightmost border
+            int writePtrRight = cols - 1;
+            // Traverse backwards from the right down to the center line
+            for (int c = cols - 1; c >= mid; c--) {
+                if (matrix[r][c] != 0) {
+                    matrix[r][writePtrRight] = matrix[r][c];
+                    if (writePtrRight != c) {
+                        matrix[r][c] = 0;
+                    }
+                    writePtrRight--; // Move the write pointer leftwards
+                }
+            }
+        }
         return matrix;
     }
 
