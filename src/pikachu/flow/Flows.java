@@ -24,11 +24,12 @@ public class Flows {
         return matrix;
     }
 
-    public int[][] shiftInwardX(int[][] matrix) {
+    public int[][] shiftInwardY(int[][] matrix) {
+
         return matrix;
     }
 
-    public int[][] shiftOutwardX(int[][] matrix) {
+    public int[][] shiftOutwardY(int[][] matrix) {
         return matrix;
     }
 
@@ -82,7 +83,7 @@ public class Flows {
         // Iterate through each row independently
         for (int r = 0; r < rows; r++) {
             // Track the next available column index to write a non-zero element
-            int writePtr = cols -1;
+            int writePtr = cols - 1;
 
             // Travese from left to right to find active elements
             for (int c = cols - 1; c >= 0; c--) {
@@ -104,11 +105,11 @@ public class Flows {
         return matrix;
     }
 
-    public int[][] shiftInwardY(int[][] matrix) {
+    public int[][] shiftInwardX(int[][] matrix) {
         return matrix;
     }
 
-    public int[][] shiftOutwardY(int[][] matrix) {
+    public int[][] shiftOutwardX(int[][] matrix) {
         return matrix;
     }
 
