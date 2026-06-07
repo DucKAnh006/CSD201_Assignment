@@ -166,6 +166,7 @@ public class GameLogic {
      * with at most 2 turns (3 straight segments), adhering to standard Pikachu rules.
      * Uses Breadth-First Search (BFS) combined with direction tracking.
      * * @param pokemon1 The starting tile coordinate node.
+     * @param pokemon1
      * @param pokemon2 The target tile coordinate node.
      * @return true if a valid path exists; false otherwise.
      */
@@ -182,7 +183,7 @@ public class GameLogic {
         Queue<Node> q = new LinkedList<>();
 
         // Starting point: Direction = -1 (no direction yet), Number of turns = 0
-        q.add(new Node(pokemon1.getCol(), pokemon1.getRow(), -1, 0));
+        q.add(new Node(pokemon1.getRow(), pokemon1.getCol(), -1, 0));
 
         while (!q.isEmpty()) {
             Node currentNode = q.poll();
@@ -217,7 +218,7 @@ public class GameLogic {
                             // Check whether this cell has already been visited with this DIRECTION `i`
                             if (!visited[nextCol][nextRow][i]) {
                                 visited[nextCol][nextRow][i] = true; // Mark as visited in direction i
-                                q.add(new Node(nextCol, nextRow, i, nextTurns));
+                                q.add(new Node(nextRow, nextCol, i, nextTurns));
                             }
                         }
                     }
