@@ -10,10 +10,6 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import javax.swing.JOptionPane;
-import java.io.File;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
 
 /**
  * The InGame class represents the main game panel where the puzzle is displayed and played.
@@ -92,7 +88,7 @@ public class InGame extends JPanel {
 
             // Get the image ID for the current cell from the matrix and create a button for it
             int currentImgID = matrix[row + 1][col + 1];
-            PokemonNode btn = new PokemonNode(row, col, currentImgID);
+            PokemonNode btn = new PokemonNode(row + 1, col + 1, currentImgID);
             if (currentImgID != -1) { // If the image ID is valid, set the corresponding icon for the button
                 btn.setIcon(pieceIcons[currentImgID]);
             } else { // If the image ID is -1, it means the cell is empty, so we hide the button
@@ -109,7 +105,7 @@ public class InGame extends JPanel {
 
             btn.addActionListener(e -> { // Action listener for when a button (image) is clicked
                 PokemonNode currentClick = (PokemonNode) e.getSource();
-
+                
                 if (firstSelected == null) { // If no button is currently selected, set the clicked button as the first selected and highlight it
                     firstSelected = currentClick; // Set the first selected button to the currently clicked button
                     firstSelected.setBorder(javax.swing.BorderFactory.createLineBorder(java.awt.Color.RED, 3)); // Highlight the first selected button with a red border
@@ -127,7 +123,7 @@ public class InGame extends JPanel {
                         boolean canConnect = gameLogic.findPath(firstSelected, currentClick);
 
                         if (canConnect) { // If the buttons can be connected, update the game state to reflect the matched pair and check for level completion
-                            level(gameLogic.updateMatrix(firstSelected.getRow() + 1, firstSelected.getCol() + 1, currentClick.getRow() + 1, currentClick.getCol() + 1, currentLevel));
+                            level(gameLogic.updateMatrix(firstSelected.getRow(), firstSelected.getCol(), currentClick.getRow(), currentClick.getCol(), currentLevel));
                             playSound("sound5.wav");
                             progress += 2; // Increment the progress by 2 for each matched pair
 
@@ -141,10 +137,10 @@ public class InGame extends JPanel {
                             }
                         } else { // If the buttons cannot be connected, deselect the first selected button and play a sound to indicate an invalid match
                             firstSelected.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+                            playSound("sound1.wav");
                         }
                     } else { // If the image IDs do not match, deselect the first selected button and play a sound to indicate an invalid match
                         firstSelected.setBorder(javax.swing.BorderFactory.createEmptyBorder());
-                        playSound("sound1.wav");
                     }
                     firstSelected = null;
                 }
