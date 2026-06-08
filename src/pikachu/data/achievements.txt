@@ -1,0 +1,8 @@
+520,Hard
+485,Normal
+470,Hard
+450,Normal
+430,Easy
+410,Normal
+395,Hard
+360,Easy
