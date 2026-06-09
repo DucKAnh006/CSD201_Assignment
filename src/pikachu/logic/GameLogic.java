@@ -16,10 +16,15 @@ import java.util.Queue;
  * @author ADMIN
  */
 
+/**
+ * Represents a cell used during pathfinding.
+ * Stores the cell position, the direction used to reach it,
+ * and the number of turns made so far.
+ */
 class Node {
     int row, col;
-    int direction; // Hướng đi đến ô này: -1 (bắt đầu), 0 (Lên), 1 (Xuống), 2 (Trái), 3 (Phải)
-    int turns;     // Số lần rẽ để đi đến được ô này
+    int direction; // Direction used to reach this node: -1 = start, 0 = up, 1 = down, 2 = left, 3 = right
+    int turns;     // Number of turns made to reach this node
 
     public Node(int row, int col, int direction, int turns) {
         this.row = row;
@@ -33,10 +38,6 @@ class Node {
 
     public int getDirection() {
         return direction;
-    }
-
-    public void setDirection(int direction) {
-        this.direction = direction;
     }
 
     public int getRow() {
@@ -161,24 +162,25 @@ public class GameLogic {
         return matrix;
     }
 
-    /**
-     * Validates if a matching pair of Pokemon can be connected using a path 
-     * with at most 2 turns (3 straight segments), adhering to standard Pikachu rules.
-     * Uses Breadth-First Search (BFS) combined with direction tracking.
-     * * @param pokemon1 The starting tile coordinate node.
-     * @param pokemon1
-     * @param pokemon2 The target tile coordinate node.
-     * @return true if a valid path exists; false otherwise.
-     */
-    public boolean findPath(PokemonNode pokemon1, PokemonNode pokemon2) {
+
+/**
+ * Validates if a matching pair of Pokemon can be connected using a path
+ * with at most 2 turns, following standard Pikachu rules.
+ * Uses Breadth-First Search with direction tracking.
+ *
+ * @param pokemon1 the starting Pokemon tile
+ * @param pokemon2 the target Pokemon tile
+ * @return true if a valid path exists; false otherwise
+ */
+public boolean findPath(PokemonNode pokemon1, PokemonNode pokemon2) {
 
         // 4 corresponding movement directions: Up, Down, Left, Right
         int[] fx = {0, 0, -1, 1}; // Change on the horizontal axis (Column)
         int[] fy = {-1, 1, 0, 0}; // Change on the vertical axis (Row)
 
-        // 3-dimensional visited marker array: [Column][Row][Direction (0->3)]
+        // 3-dimensional visited marker array: [Row][Collumn][Direction (0->3)]
         // Helps prevent infinite loops without losing paths that arrive from other directions
-        boolean[][][] visited = new boolean[this.cols + 2][this.rows + 2][4];
+        boolean[][][] visited = new boolean[this.rows + 2][this.cols + 2][4];
 
         Queue<Node> q = new LinkedList<>();
 
@@ -216,8 +218,8 @@ public class GameLogic {
 
                         if (isEmptySpace || isTarget) {
                             // Check whether this cell has already been visited with this DIRECTION `i`
-                            if (!visited[nextCol][nextRow][i]) {
-                                visited[nextCol][nextRow][i] = true; // Mark as visited in direction i
+                            if (!visited[nextRow][nextCol][i]) {
+                                visited[nextRow][nextCol][i] = true; // Mark as visited in direction i
                                 q.add(new Node(nextRow, nextCol, i, nextTurns));
                             }
                         }
