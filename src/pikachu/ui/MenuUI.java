@@ -11,18 +11,44 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
+/**
+ * MenuUI - main menu panel for the Pikachu game.
+ *
+ * Responsibilities:
+ * - Render the main menu UI and background image.
+ * - Provide actions to start a new game, view achievements, or exit.
+ * - Bridge user choices to InGame and AchievementManager APIs.
+ *
+ * Usage notes:
+ * - To start a game programmatically call:
+ *     parent.switchPanel(new InGame(rows, cols, difficulty, parent));
+ * - To retrieve top scores programmatically call:
+ *     new AchievementManager().getTopAchievements(max, difficulty);
+ */
 public class MenuUI extends JPanel {
 
+    // Reference to the main application frame used for panel switching and dialogs.
     private final MainFrame parent;
+    // Optional background image for the menu.
     private Image backgroundImage;
+    // Single AchievementManager instance for querying stored scores.
     private final AchievementManager achievementManager = new AchievementManager();
 
+    /**
+     * Construct the menu UI.
+     *
+     * @param parent main application frame used to switch panels and show dialogs
+     */
     public MenuUI(MainFrame parent) {
         this.parent = parent;
-        loadBackgroundImage();
-        initUI();
+        loadBackgroundImage(); // Load background resource if available
+        initUI();              // Build UI components
     }
 
+    /**
+     * Try to load background image from resources.
+     * First attempts /pikachu/img then a fallback /img path.
+     */
     private void loadBackgroundImage() {
         java.net.URL bgURL = getClass().getResource("/pikachu/img/bg_menu_pikachu.jpg");
         if (bgURL == null) {
@@ -33,6 +59,10 @@ public class MenuUI extends JPanel {
         }
     }
 
+    /**
+     * Initialize layout and add menu buttons.
+     * Buttons call handleMenuAction when clicked.
+     */
     private void initUI() {
         this.setLayout(new GridBagLayout());
         this.setOpaque(false);
@@ -60,6 +90,12 @@ public class MenuUI extends JPanel {
         this.add(createMenuButton("Exit"), gbc);
     }
 
+    /**
+     * Create a styled menu button with an action handler.
+     *
+     * @param text button label
+     * @return configured JButton
+     */
     private JButton createMenuButton(String text) {
         JButton button = new JButton(text);
         button.setPreferredSize(new Dimension(280, 70));
@@ -67,10 +103,18 @@ public class MenuUI extends JPanel {
         button.setBackground(new Color(255, 204, 0));
         button.setForeground(Color.BLACK);
         button.setFocusPainted(false);
-        button.addActionListener(e -> handleMenuAction(text));
+        button.addActionListener(e -> handleMenuAction(text)); // Delegate click handling
         return button;
     }
 
+    /**
+     * Handle top-level menu actions.
+     * "Start" -> show difficulty dialog and start game
+     * "Achievement" -> show achievements dialog
+     * "Exit" -> exit application
+     *
+     * @param action label of clicked button
+     */
     private void handleMenuAction(String action) {
         switch (action) {
             case "Start" -> openDifficultyDialog();
@@ -79,6 +123,13 @@ public class MenuUI extends JPanel {
         }
     }
 
+    /**
+     * Show a dialog to choose difficulty and then switch to InGame panel.
+     * Mapping:
+     * - Easy -> new InGame(8, 12, "Easy", parent)
+     * - Normal -> new InGame(10, 15, "Normal", parent)
+     * - Hard -> new InGame(12, 18, "Hard", parent)
+     */
     private void openDifficultyDialog() {
         String[] options = {"Easy", "Normal", "Hard", "Cancel"};
         int choice = JOptionPane.showOptionDialog(
@@ -93,23 +144,44 @@ public class MenuUI extends JPanel {
         );
 
         if (choice == 0) {
-            parent.switchPanel(new InGame(8, 12, parent));
+            parent.switchPanel(new InGame(8, 12, "Easy", parent));
         } else if (choice == 1) {
-            parent.switchPanel(new InGame(10, 15, parent));
+            parent.switchPanel(new InGame(10, 15, "Normal", parent));
         } else if (choice == 2) {
-            parent.switchPanel(new InGame(12, 18, parent));
+            parent.switchPanel(new InGame(12, 18, "Hard", parent));
         }
     }
 
+    /**
+     * Show a dialog to choose difficulty and then display top achievements for that difficulty.
+     * Uses AchievementManager.getTopAchievements(8, selectedDifficulty).
+     */
     private void showAchievements() {
-        List<Achievement> top = achievementManager.getTopAchievements(8);
+        String[] options = {"Easy", "Normal", "Hard", "Cancel"};
+        int choice = JOptionPane.showOptionDialog(
+                parent,
+                "Select difficulty to view top scores",
+                "Achievements - Select Difficulty",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[1]
+        );
+
+        if (choice < 0 || choice >= 3) return;
+        String selectedDifficulty = options[choice];
+
+        // Query top 8 scores for the chosen difficulty
+        List<Achievement> top = achievementManager.getTopAchievements(8, selectedDifficulty);
         if (top.isEmpty()) {
-            JOptionPane.showMessageDialog(parent, "No achievements yet.", "Top Scores", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(parent, "No achievements yet for " + selectedDifficulty + ".", "Top Scores", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
+        // Build a simple textual representation of the top scores
         StringBuilder builder = new StringBuilder();
-        builder.append("Top 8 High Scores:\n\n");
+        builder.append("Top 8 High Scores (").append(selectedDifficulty).append("):\n\n");
         int rank = 1;
         for (Achievement achievement : top) {
             builder.append(rank)
@@ -130,6 +202,11 @@ public class MenuUI extends JPanel {
         JOptionPane.showMessageDialog(parent, new JScrollPane(display), "Achievements", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /**
+     * Paint background image if available.
+     *
+     * @param g Graphics context
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
