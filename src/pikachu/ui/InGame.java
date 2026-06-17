@@ -5,7 +5,7 @@ import pikachu.logic.PokemonNode;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList; // Added import for ArrayList
+import java.util.ArrayList;
 import pikachu.data.Achievement;
 import pikachu.data.AchievementManager;
 
@@ -118,6 +118,7 @@ public class InGame extends JPanel {
     private void initUI() {
         this.setLayout(new BorderLayout());
 
+        // Declare panel to show player progress such as current level, score, number of available swaps
         JPanel leftPanel = new JPanel();
         leftPanel.setPreferredSize(new Dimension(100, 900));
         leftPanel.setBackground(new Color(230, 230, 230)); 
@@ -135,6 +136,7 @@ public class InGame extends JPanel {
         leftPanel.add(swapsLabel);
         this.add(leftPanel, BorderLayout.WEST);
 
+        // Declare panel to show tiem bar, game ui and buttons use in game
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setPreferredSize(new Dimension(1100, 900));
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
@@ -146,6 +148,7 @@ public class InGame extends JPanel {
         timeBar.setForeground(Color.GREEN);
         rightPanel.add(timeBar, BorderLayout.NORTH);
 
+        // Declare an outer for in game panel to keep it alway in the center
         JPanel gridWrapper = new JPanel(new GridBagLayout());
         gridWrapper.add(gamePanel);
         rightPanel.add(gridWrapper, BorderLayout.CENTER);
@@ -177,7 +180,7 @@ public class InGame extends JPanel {
         });
         
         btnNewGame.addActionListener(e -> {
-            InGame newGame = new InGame(rows, cols, difficulty, parent);
+            InGame newGame = new InGame(rows - 2, cols - 2, difficulty, parent);
             parent.switchPanel(newGame);
         });
 
@@ -198,6 +201,7 @@ public class InGame extends JPanel {
         
         this.add(rightPanel, BorderLayout.CENTER);
 
+        // after set up all backgroud the system call startgame to create matrix and map image show to the player
         startGame();
     }
 
@@ -215,6 +219,7 @@ public class InGame extends JPanel {
         countdownTimer = new Timer(1000, e -> {
             timeLeft--;
             timeBar.setValue(timeLeft);
+            // check time left to change the time bar color
             if (timeLeft <= (MAX_TIME - 2 * MAX_TIME/10)  && timeLeft > (MAX_TIME - 7 * MAX_TIME/10)) {
                 timeBar.setForeground(Color.YELLOW);
             } else if (timeLeft <= (MAX_TIME - 7 * MAX_TIME/10)) {
@@ -243,12 +248,16 @@ public class InGame extends JPanel {
      * Starts the game by resetting necessary stats and generating the matrix.
      */
     private void startGame() {
+        // reset swapsAvailable value
         swapsAvailable = 3;
         swapsLabel.setText("Swaps: " + swapsAvailable);
         levelLabel.setText("Level: " + currentLevel);
         
+        // call gameLogic to create and get matrix
         gameLogic.createMatrix();
         progress = 0;
+
+        // start to map image and start the game
         level(gameLogic.getMatrix());
         playSound("sound4.wav");
         
