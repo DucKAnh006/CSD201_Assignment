@@ -5,6 +5,7 @@ import pikachu.logic.PokemonNode;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList; // Added import for ArrayList
 import pikachu.data.Achievement;
 import pikachu.data.AchievementManager;
 
@@ -13,22 +14,73 @@ import pikachu.data.AchievementManager;
  */
 public class InGame extends JPanel {
 
-    private MainFrame parent; 
-    private JPanel gamePanel = new JPanel(); 
-    private GameLogic gameLogic; 
-    private int numberOfImage; 
-    private int progress; 
+    private MainFrame parent; // Declare a variable to store frame address to avoid create too much frame
+    
+    // Created gamePanel as an anonymous subclass to override paint() for custom path drawing
+    private JPanel gamePanel = new JPanel() {
+        /**
+         * Overrides the paint method to draw the path line over the buttons.
+         * The standard components (buttons) are drawn first, then the path is rendered on top.
+         *
+         * @param g The Graphics object used for drawing.
+         */
+        @Override
+        public void paint(Graphics g) {
+            super.paint(g); // Draw all grid buttons first
+            
+            // Check if there is a valid path to draw
+            if (currentPath != null && currentPath.size() > 1) {
+                Graphics2D g2d = (Graphics2D) g;
+                
+                // Enable anti-aliasing for smooth lines
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Set line properties: Red color, 5px thickness, rounded caps and joins
+                g2d.setColor(Color.RED);
+                g2d.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+                // Dynamically calculate the dimensions of a single cell in the grid
+                int cellWidth = this.getWidth() / cols;
+                int cellHeight = this.getHeight() / rows;
+
+                // Iterate through the path points to draw connecting lines
+                for (int i = 0; i < currentPath.size() - 1; i++) {
+                    int[] p1 = currentPath.get(i);
+                    int[] p2 = currentPath.get(i + 1);
+
+                    // Calculate center pixel coordinates for the current node (p[1] is col, p[0] is row)
+                    int x1 = (p1[1] * cellWidth) + (cellWidth / 2);
+                    int y1 = (p1[0] * cellHeight) + (cellHeight / 2);
+
+                    // Calculate center pixel coordinates for the next node
+                    int x2 = (p2[1] * cellWidth) + (cellWidth / 2);
+                    int y2 = (p2[0] * cellHeight) + (cellHeight / 2);
+
+                    // Draw the line segment
+                    g2d.drawLine(x1, y1, x2, y2);
+                }
+            }
+        }
+    }; 
+    
+    private GameLogic gameLogic; // clas logic to handle logic in this game
+    private int numberOfImage; // the total of image in a level
+    private int progress; // the number of image pairs that player chose
     private int currentLevel = 1; 
     private int maxLevel = 9; 
 
-    private int rows, cols;
-    private String difficulty;
+    private int rows, cols; // the number of rows and cols in game
+    private String difficulty; // the difficulity to check archievement
     private PokemonNode firstSelected = null; 
+    
+    // NEW FIELD: Stores the coordinates of the path to be drawn
+    private ArrayList<int[]> currentPath = null; // the array to store the path of the shortest path
 
-    private int score = 0; 
-    private int swapsAvailable = 3; 
+    private int score = 0; // player's score
+    private int swapsAvailable = 3; // the times that user can use to change matrix to continue
     private boolean isMuted = false;
 
+    // child label to hold game property
     private JLabel scoreLabel;
     private JLabel levelLabel;
     private JLabel swapsLabel;
@@ -211,6 +263,9 @@ public class InGame extends JPanel {
     private void level(int[][] matrix) {
         gamePanel.removeAll();
         firstSelected = null;
+        
+        // Reset the path array when loading/reloading the level matrix
+        currentPath = null;
  
         int baseWidth = 40;
         int baseHeight = 50;
@@ -267,7 +322,7 @@ public class InGame extends JPanel {
             if (currentImgID != -1) { 
                 btn.setIcon(pieceIcons[currentImgID]);
             } else { 
-                btn.setVisible(true);
+                btn.setVisible(false);
             }
 
             btn.setMargin(new Insets(0, 0, 0, 0));
@@ -301,17 +356,24 @@ public class InGame extends JPanel {
 
                     // Check if both selected buttons have the same image ID
                     if (id1 == id2) { 
-                        boolean canConnect = gameLogic.findPath(firstSelected, currentClick);
+                        // MODIFIED: Capture the returning path list from gameLogic instead of boolean
+                        ArrayList<int[]> path = gameLogic.findPath(firstSelected, currentClick);
 
-                        // If a valid path exists between the two nodes
-                        if (canConnect) { 
+                        // If a valid path exists between the two nodes (array is not null)
+                        if (path != null) { 
                             // Add 20 points for a successful connection
                             score += 20;
+                            
+                            // SET THE PATH TO BE DRAWN AND REPAINT
+                            currentPath = path;
+                            gamePanel.repaint();
                             
                             PokemonNode node1 = firstSelected;
                             PokemonNode node2 = currentClick;
                             
+                            // DELAY: Increased from 150 to 400 to let the player clearly see the drawn red line
                             Timer timer = new Timer(150, t -> {
+                                currentPath = null; // Clear the drawn path
                                 level(gameLogic.updateMatrix(node1.getRow(), node1.getCol(), node2.getRow(), node2.getCol(), currentLevel));
                             });
                             
