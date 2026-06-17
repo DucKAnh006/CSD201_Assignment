@@ -82,222 +82,113 @@ public class GameLogic {
         this.cols = y;
         this.matrix = new int[x + 2][y + 2];
     }
-
-       /**
-     * Create a valid Pikachu board.
+    
+    /**
+     * Generates a new Pikachu game board.
      *
-     * Rules:
-     * 1. Number of cells must be even
-     * 2. Every Pokemon appears in pairs
-     * 3. The generated board must contain at least one valid move
+     * This method creates pairs of Pokemon IDs, randomly shuffles them, places
+     * them into the playable area, and surrounds the board with a border of
+     * empty cells (-1).
+     *
+     * The generation process repeats until the board contains at least one
+     * valid matching pair that can be connected according to the Pikachu
+     * findPath rules.
+     *
+     * @throws IllegalArgumentException if rows * cols is odd
      */
     public void createMatrix() {
 
-        // Calculate the number of playable cells
+        // Total number of playable cells
         int totalCells = rows * cols;
 
-        // A Pikachu board must contain an even number of cells
-        // because Pokemon are generated in pairs
+        // The number of cells must be even so that all Pokemon can be generated in pairs
         if (totalCells % 2 != 0) {
-            throw new IllegalArgumentException(
-                    "Rows * Cols must be even");
+            throw new IllegalArgumentException("Rows * Cols must be even");
         }
-
-        // Used to determine whether the generated board
-        // contains at least one valid move
+        
         boolean validBoard = false;
-
-        // Continue generating boards until a valid one is found
+        
+        // Continue generating boards until at least one valid move exists
         while (!validBoard) {
 
-            // Re-create matrix to remove old data
-            matrix = new int[rows + 2][cols + 2];
+            // Store all Pokemon IDs that will be placed on the board
+            ArrayList<Integer> values = new ArrayList<>(totalCells);
 
-            // =====================
-            // Create left and right border
-            // Border cells contain -1
-            // and are considered empty space
-            // =====================
-            for (int i = 0; i < rows + 2; i++) {
-                matrix[i][0] = -1;
-                matrix[i][cols + 1] = -1;
-            }
-
-            // =====================
-            // Create top and bottom border
-            // =====================
-            for (int j = 0; j < cols + 2; j++) {
-                matrix[0][j] = -1;
-                matrix[rows + 1][j] = -1;
-            }
-
-            // Number of Pokemon pairs required
-            int pairCount = totalCells / 2;
-
-            // Store all generated Pokemon IDs
-            ArrayList<Integer> values
-                    = new ArrayList<>(totalCells);
-
-            // =====================================
-            // CASE 1:
-            // Enough icons available
-            // Example:
-            // 30 pairs, 36 icons
-            // -> Try to use different icons
-            // =====================================
-            if (pairCount <= NUM_ICONS) {
-
-                // Store all available icon IDs
-                ArrayList<Integer> icons
-                        = new ArrayList<>();
-
-                for (int i = 1; i <= NUM_ICONS; i++) {
-                    icons.add(i);
-                }
-
-                // Randomize icon order
-                Collections.shuffle(icons);
-
-                // Select only the required number of icons
-                for (int i = 0; i < pairCount; i++) {
-
-                    int icon = icons.get(i);
-
-                    // Add a pair
-                    values.add(icon);
-                    values.add(icon);
-                }
-            } // =====================================
-            // CASE 2:
-            // Not enough icons available
-            // Example:
-            // 90 pairs but only 36 icons
-            // =====================================
-            else {
-
-                // Calculate the maximum number of pairs
-                // each icon may appear
-                int maxPairPerIcon
-                        = (int) Math.ceil(
-                                (double) pairCount / NUM_ICONS);
-
-                // Temporary container
-                ArrayList<Integer> bag
-                        = new ArrayList<>();
-
-                // Add each icon multiple times
-                for (int icon = 1;
-                        icon <= NUM_ICONS;
-                        icon++) {
-
-                    for (int k = 0;
-                            k < maxPairPerIcon;
-                            k++) {
-
-                        bag.add(icon);
-                    }
-                }
-
-                // Randomize icon distribution
-                Collections.shuffle(bag);
-
-                // Select only the number of pairs required
-                for (int i = 0;
-                        i < pairCount;
-                        i++) {
-
-                    int icon = bag.get(i);
-
-                    values.add(icon);
+            // Generate Pokemon IDs in pairs
+            // Example: 3 3 8 8 12 12 ...
+            while (values.size() < totalCells) {
+                int icon = (int) (Math.random() * 36);
+                values.add(icon);
+                if (values.size() < totalCells) {
                     values.add(icon);
                 }
             }
 
-            // Randomize Pokemon positions
+            // Randomize the order of all generated Pokemon pairs
             Collections.shuffle(values);
-
-            // Fill matrix with generated Pokemon IDs
             int index = 0;
 
-            for (int r = 1; r <= rows; r++) {
-                for (int c = 1; c <= cols; c++) {
-
-                    matrix[r][c]
-                            = values.get(index++);
+            // Fill the matrix:
+            // - Border cells are marked as -1
+            // - Inner cells contain Pokemon IDs
+            for (int r = 0; r < rows + 2; r++) {
+                for (int c = 0; c < cols + 2; c++) {
+                    if (r == 0 || r == rows + 1 || c == 0 || c == cols + 1) {
+                        matrix[r][c] = -1;
+                    } else {
+                        matrix[r][c] = values.get(index++);
+                    }
                 }
             }
 
-            // Verify that the board contains
-            // at least one valid move
+            // Verify that the generated board contains at least one valid move
             validBoard = checkValidMatrix();
         }
     }
 
     /**
+     * Checks whether the current board contains at least one valid move.
      *
-     * Check whether the current board still has at least one valid move.
+     * The method scans all remaining Pokemon tiles and searches for another
+     * tile with the same ID. For each matching pair, the findPath algorithm is
+     * executed to determine whether the two tiles can be connected with at most
+     * two turns.
      *
-     * Algorithm: 
-     * 1. Traverse every cell.
-     * 2. Find another cell with the same icon ID 
-     * 3. Use BFS (findPath) to determine whether the two cells can be connected 
-     * 4. If one valid pair is found, return true 
-     * 5. Otherwise return false
+     * If at least one connectable pair exists, the board is considered valid
+     * and the method returns {@code true}.
+     *
+     * @return {@code true} if at least one valid pair exists; {@code false}
+     * otherwise
      */
     public boolean checkValidMatrix() {
 
-        // Traverse every cell in the board
+        // Traverse every active cell on the board
         for (int i = 1; i <= rows; i++) {
-
             for (int j = 1; j <= cols; j++) {
 
-                int value = matrix[i][j];
-
-                // Ignore removed cells
-                if (value == -1) {
+                // Ignore empty cells
+                if (matrix[i][j] == -1) {
                     continue;
                 }
+                int value = matrix[i][j];
 
-                // Search for another cell
-                // containing the same Pokemon
+                // Search for another Pokemon with the same ID
                 for (int m = i; m <= rows; m++) {
+                    int startCol = (m == i) ? j + 1 : 1;
 
-                    int startCol;
-
-                    // Avoid checking duplicate pairs
-                    if (m == i) {
-                        startCol = j + 1;
-                    } else {
-                        startCol = 1;
-                    }
-
-                    for (int n = startCol;
-                            n <= cols;
-                            n++) {
-
-                        // Different Pokemon
+                    // Avoid checking the same pair twice
+                    for (int n = startCol; n <= cols; n++) {
                         if (matrix[m][n] != value) {
                             continue;
                         }
 
-                        // Create first Pokemon node
-                        PokemonNode p1
-                                = new PokemonNode(
-                                        i,
-                                        j,
-                                        value);
+                        // Create two Pokemon nodes for pathfinding
+                        PokemonNode p1 = new PokemonNode(i, j, value);
+                        PokemonNode p2 = new PokemonNode(m, n, value);
 
-                        // Create second Pokemon node
-                        PokemonNode p2
-                                = new PokemonNode(
-                                        m,
-                                        n,
-                                        value);
-
-                        // Check whether a valid path exists
-                        if (findPath(p1, p2)) {
-
-                            // At least one move exists
+                        // If a valid path exists between the two Pokemon,
+                        // the board still has at least one available move
+                        if (findPath(p1, p2) != null) {
                             return true;
                         }
                     }
@@ -305,14 +196,10 @@ public class GameLogic {
             }
         }
 
-        // No valid pair found
+        // No connectable pair was found
         return false;
     }
-
-    public int[][] getMatrix() {
-        return matrix;
-    }
-
+    
     /**
      * Shuffles all remaining active Pokemon tiles on the board.
      * This method collects the IDs of all remaining tiles, shuffles them randomly, 
