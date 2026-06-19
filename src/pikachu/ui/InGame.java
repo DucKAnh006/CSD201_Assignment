@@ -74,6 +74,7 @@ public class InGame extends JPanel {
     private int rows, cols; // the number of rows and cols in game
     private String difficulty; // the difficulity to check archievement
     private PokemonNode firstSelected = null;
+    private JButton firstButton = null;
 
     // NEW FIELD: Stores the coordinates of the path to be drawn
     private ArrayList<int[]> currentPath = null; // the array to store the path of the shortest path
@@ -91,7 +92,8 @@ public class InGame extends JPanel {
     private JProgressBar timeBar;
     private Timer countdownTimer;
     private int timeLeft;
-    private final int MAX_TIME = 600;
+    private final int MAX_TIME = 10;
+    
 
     /**
      * Constructs the InGame panel.
@@ -182,6 +184,8 @@ public class InGame extends JPanel {
         });
 
         btnNewGame.addActionListener(e -> {
+            // stop count down
+            countdownTimer.stop();
             InGame newGame = new InGame(rows - 2, cols - 2, difficulty, parent);
             parent.switchPanel(newGame);
         });
@@ -191,8 +195,7 @@ public class InGame extends JPanel {
             if (countdownTimer != null) {
                 countdownTimer.stop();
             }
-            MenuUI menu = new MenuUI(parent);
-            parent.switchPanel(menu);
+            menuOptions();
         });
 
         bottomButtonsPanel.add(btnMute);
@@ -205,6 +208,27 @@ public class InGame extends JPanel {
 
         // after set up all backgroud the system call startgame to create matrix and map image show to the player
         startGame();
+    }
+    
+    private void menuOptions() {
+        String[] options = {"Continue", "Main Menu"};
+        int choice = JOptionPane.showOptionDialog(
+                parent,
+                "",
+                "Menu",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        if (choice == 0) {
+            countdownTimer.start();
+        } else if (choice == 1) {
+            MenuUI menu = new MenuUI(parent);
+            parent.switchPanel(menu);
+        }
     }
 
     /**
@@ -333,6 +357,7 @@ public class InGame extends JPanel {
             // Verify if the current image ID is valid to show the icon, else hide the button
             if (currentImgID != -1) {
                 btn.setIcon(pieceIcons[currentImgID]);
+
             } else {
                 btn.setVisible(false);
             }
@@ -345,12 +370,14 @@ public class InGame extends JPanel {
             btn.setMaximumSize(dynamicBtnSize);
 
             gamePanel.add(btn);
-
+            
             btn.addActionListener(e -> {
+                
                 PokemonNode currentClick = (PokemonNode) e.getSource();
 
                 // If this is the first button selected
                 if (firstSelected == null) {
+                    firstButton = btn;
                     firstSelected = currentClick;
                     firstSelected.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                     playSound("sound2.wav");
@@ -371,6 +398,12 @@ public class InGame extends JPanel {
 
                         // If a valid path exists between the two nodes (array is not null)
                         if (path != null) {
+                            // Set two buttons to disable to avoid user try to spams click 
+                            firstButton.setEnabled(false);
+                            firstButton.setDisabledIcon(firstButton.getIcon());
+                            btn.setEnabled(false);
+                            btn.setDisabledIcon(btn.getIcon());
+                            
                             // Add 20 points for a successful connection
                             score += 20;
 
@@ -391,6 +424,7 @@ public class InGame extends JPanel {
                                     level(gameLogic.swapMatrix());
                                     playSound("sound4.wav");
                                 }
+                                
                             });
 
                             timer.setRepeats(false);
