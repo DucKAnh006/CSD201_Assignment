@@ -116,12 +116,14 @@ public class GameLogic {
 
             // Generate Pokemon IDs in pairs
             // Example: 3 3 8 8 12 12 ...
+            int n = 0;
             while (values.size() < totalCells) {
-                int icon = (int) (Math.random() * 36);
+                int icon = n % 36;
                 values.add(icon);
                 if (values.size() < totalCells) {
                     values.add(icon);
                 }
+                n++;
             }
 
             // Randomize the order of all generated Pokemon pairs
@@ -198,6 +200,10 @@ public class GameLogic {
 
         // No connectable pair was found
         return false;
+    }
+
+     public int[][] getMatrix() {
+        return matrix;
     }
     
     /**
