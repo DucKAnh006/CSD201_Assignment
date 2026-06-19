@@ -15,42 +15,42 @@ import pikachu.data.AchievementManager;
  */
 public class InGame extends JPanel {
 
-    private MainFrame parent; // Declare a variable to store frame address to avoid create too much frame
+    // Reference to the main application frame to allow panel switching without instantiating new frames
+    private MainFrame parent; 
 
-    // Created gamePanel as an anonymous subclass to override paint() for custom path drawing
+    // Custom JPanel used for the game board to allow custom painting (drawing the red connection path)
     private JPanel gamePanel = new JPanel() {
         /**
          * Overrides the paint method to draw the path line over the buttons.
-         * The standard components (buttons) are drawn first, then the path is
-         * rendered on top.
+         * The standard components (buttons) are drawn first, then the path is rendered on top.
          *
          * @param g The Graphics object used for drawing.
          */
         @Override
         public void paint(Graphics g) {
-            super.paint(g); // Draw all grid buttons first
+            super.paint(g); // Step 1: Draw all child components (the grid buttons) first
 
-            // Check if there is a valid path to draw
+            // Step 2: Check if there is a valid path to draw and it has at least 2 points to connect
             if (currentPath != null && currentPath.size() > 1) {
                 Graphics2D g2d = (Graphics2D) g;
 
-                // Enable anti-aliasing for smooth lines
+                // Enable anti-aliasing to prevent jagged edges on the red line
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Set line properties: Red color, 5px thickness, rounded caps and joins
+                // Set line style: Red color, 5px thickness, with rounded caps and joins for a smoother look
                 g2d.setColor(Color.RED);
                 g2d.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
-                // Dynamically calculate the dimensions of a single cell in the grid
+                // Dynamically calculate the pixel dimensions of a single cell in the grid
                 int cellWidth = this.getWidth() / cols;
                 int cellHeight = this.getHeight() / rows;
 
-                // Iterate through the path points to draw connecting lines
+                // Iterate through the path list to draw connecting line segments between consecutive nodes
                 for (int i = 0; i < currentPath.size() - 1; i++) {
-                    int[] p1 = currentPath.get(i);
-                    int[] p2 = currentPath.get(i + 1);
+                    int[] p1 = currentPath.get(i); // Current node
+                    int[] p2 = currentPath.get(i + 1); // Next node
 
-                    // Calculate center pixel coordinates for the current node (p[1] is col, p[0] is row)
+                    // Calculate center pixel coordinates for the current node (p[1] is col -> X axis, p[0] is row -> Y axis)
                     int x1 = (p1[1] * cellWidth) + (cellWidth / 2);
                     int y1 = (p1[0] * cellHeight) + (cellHeight / 2);
 
@@ -58,71 +58,79 @@ public class InGame extends JPanel {
                     int x2 = (p2[1] * cellWidth) + (cellWidth / 2);
                     int y2 = (p2[0] * cellHeight) + (cellHeight / 2);
 
-                    // Draw the line segment
+                    // Render the line segment on the screen
                     g2d.drawLine(x1, y1, x2, y2);
                 }
             }
         }
     };
 
-    private GameLogic gameLogic; // clas logic to handle logic in this game
-    private int numberOfImage; // the total of image in a level
-    private int progress; // the number of image pairs that player chose
-    private int currentLevel = 1;
-    private int maxLevel = 9;
+    // --- Core Game Logic & State Variables ---
+    private GameLogic gameLogic;         // Handles algorithms (pathfinding, matrix generation, etc.)
+    private int numberOfImage;           // Total number of images (pairs) in the current level
+    private int progress;                // Number of individual images cleared so far
+    private int currentLevel = 1;        // Tracks the current level number
+    private int maxLevel = 9;            // Maximum level before finishing the game
 
-    private int rows, cols; // the number of rows and cols in game
-    private String difficulty; // the difficulity to check archievement
-    private PokemonNode firstSelected = null;
-    private JButton firstButton = null;
+    private int rows, cols;              // Number of rows and columns (including the empty outer borders)
+    private String difficulty;           // Difficulty setting used for recording achievements
+    
+    // --- User Interaction Variables ---
+    private PokemonNode firstSelected = null; // Stores the reference to the first clicked button
+    private JButton firstButton = null;       // Auxiliary reference to handle button disabling
+    private ArrayList<int[]> currentPath = null; // Stores the coordinates of the shortest path to be drawn
 
-    // NEW FIELD: Stores the coordinates of the path to be drawn
-    private ArrayList<int[]> currentPath = null; // the array to store the path of the shortest path
+    // --- Game Stats & UI Components ---
+    private int score = 0;               // Player's current score
+    private int swapsAvailable = 3;      // Number of matrix shuffles available to the player
+    private boolean isMuted = false;     // Flag to control sound effects
 
-    private int score = 0; // player's score
-    private int swapsAvailable = 3; // the times that user can use to change matrix to continue
-    private boolean isMuted = false;
-
-    // child label to hold game property
     private JLabel scoreLabel;
     private JLabel levelLabel;
     private JLabel swapsLabel;
     private JButton btnMute;
 
+    // --- Timer Components ---
     private JProgressBar timeBar;
     private Timer countdownTimer;
     private int timeLeft;
-    private final int MAX_TIME = 10;
-    
+    private final int MAX_TIME = 600;     // Maximum time allowed per level (in seconds)
+
 
     /**
      * Constructs the InGame panel.
      *
-     * @param x The number of rows in the matrix.
-     * @param y The number of columns in the matrix.
-     * @param difficulty The difficulty of the game
-     * @param parent The main frame acting as the parent container.
+     * @param x          The number of rows in the matrix (excluding borders).
+     * @param y          The number of columns in the matrix (excluding borders).
+     * @param difficulty The difficulty of the game.
+     * @param parent     The main frame acting as the parent container.
      */
     public InGame(int x, int y, String difficulty, MainFrame parent) {
         this.parent = parent;
+        
+        // Add 2 to rows and cols to account for the outer empty borders required for pathfinding
         this.rows = x + 2;
         this.cols = y + 2;
         this.difficulty = difficulty;
-        // Calculate total number of images based on grid size
+        
+        // Total number of playable images (excluding borders)
         this.numberOfImage = x * y;
 
         this.gameLogic = new GameLogic(x, y);
-        gamePanel.setLayout(new GridLayout(x + 2, y + 2, 0, 0));
+        
+        // Set layout for the game panel to a grid matching the matrix size
+        gamePanel.setLayout(new GridLayout(this.rows, this.cols, 0, 0));
+        
         initUI();
     }
 
     /**
-     * Initializes the user interface for the game panel.
+     * Initializes the user interface for the game panel, dividing it into sections.
      */
     private void initUI() {
         this.setLayout(new BorderLayout());
 
-        // Declare panel to show player progress such as current level, score, number of available swaps
+        // --- Left Panel: Displays player stats (Level, Score, Swaps) ---
         JPanel leftPanel = new JPanel();
         leftPanel.setPreferredSize(new Dimension(100, 900));
         leftPanel.setBackground(new Color(230, 230, 230));
@@ -130,8 +138,10 @@ public class InGame extends JPanel {
 
         levelLabel = new JLabel("Level: " + currentLevel);
         levelLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        
         scoreLabel = new JLabel("Score: " + score);
         scoreLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        
         swapsLabel = new JLabel("Swaps: " + swapsAvailable);
         swapsLabel.setFont(new Font("Arial", Font.BOLD, 14));
 
@@ -140,11 +150,12 @@ public class InGame extends JPanel {
         leftPanel.add(swapsLabel);
         this.add(leftPanel, BorderLayout.WEST);
 
-        // Declare panel to show tiem bar, game ui and buttons use in game
+        // --- Right Panel: Contains the Time Bar, Game Board, and Action Buttons ---
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setPreferredSize(new Dimension(1100, 900));
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
+        // Time Bar setup at the top of the right panel
         timeBar = new JProgressBar(0, MAX_TIME);
         timeBar.setValue(MAX_TIME);
         timeBar.setPreferredSize(new Dimension(1260, 25));
@@ -152,48 +163,49 @@ public class InGame extends JPanel {
         timeBar.setForeground(Color.GREEN);
         rightPanel.add(timeBar, BorderLayout.NORTH);
 
-        // Declare an outer for in game panel to keep it alway in the center
+        // Wrapper panel to keep the game board centered
         JPanel gridWrapper = new JPanel(new GridBagLayout());
         gridWrapper.add(gamePanel);
         rightPanel.add(gridWrapper, BorderLayout.CENTER);
 
+        // --- Bottom Panel: Action buttons (Mute, Swap, New Game, Menu) ---
         JPanel bottomButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 10));
 
-        // Determine initial text for mute button based on state
         btnMute = new JButton(isMuted ? "Unmute" : "Mute");
         JButton btnSwap = new JButton("Swap Matrix");
         JButton btnNewGame = new JButton("New Game");
         JButton btnMenu = new JButton("Menu");
 
+        // Action: Toggle Sound
         btnMute.addActionListener(e -> {
-            // Toggle muted state and update button text
             isMuted = !isMuted;
             btnMute.setText(isMuted ? "Unmute" : "Mute");
         });
 
+        // Action: Shuffle the board manually
         btnSwap.addActionListener(e -> {
-            // Check if there are swaps available
             if (swapsAvailable > 0) {
                 swapsAvailable--;
                 swapsLabel.setText("Swaps: " + swapsAvailable);
-                level(gameLogic.swapMatrix());
+                level(gameLogic.swapMatrix()); // Reload the level with the new matrix
                 playSound("sound4.wav");
             } else {
                 JOptionPane.showMessageDialog(this, "No swaps available!");
             }
         });
 
+        // Action: Restart the entire game
         btnNewGame.addActionListener(e -> {
-            // stop count down
-            countdownTimer.stop();
+            if (countdownTimer != null) countdownTimer.stop();
+            // Create a new instance with original grid dimensions (subtracting the borders added earlier)
             InGame newGame = new InGame(rows - 2, cols - 2, difficulty, parent);
             parent.switchPanel(newGame);
         });
 
+        // Action: Open the pause/menu dialog
         btnMenu.addActionListener(e -> {
-            // Stop the countdown timer if it is running
             if (countdownTimer != null) {
-                countdownTimer.stop();
+                countdownTimer.stop(); // Pause the timer while in menu
             }
             menuOptions();
         });
@@ -206,10 +218,13 @@ public class InGame extends JPanel {
 
         this.add(rightPanel, BorderLayout.CENTER);
 
-        // after set up all backgroud the system call startgame to create matrix and map image show to the player
+        // Initialize level data and start the gameplay loop
         startGame();
     }
     
+    /**
+     * Displays an option dialog to pause the game and choose between continuing or going to the main menu.
+     */
     private void menuOptions() {
         String[] options = {"Continue", "Main Menu"};
         int choice = JOptionPane.showOptionDialog(
@@ -224,35 +239,38 @@ public class InGame extends JPanel {
         );
 
         if (choice == 0) {
+            // Resume timer if "Continue" is chosen
             countdownTimer.start();
         } else if (choice == 1) {
+            // Switch to Main Menu if "Main Menu" is chosen
             MenuUI menu = new MenuUI(parent);
             parent.switchPanel(menu);
         }
     }
 
     /**
-     * Sets up and starts the countdown timer for the level.
+     * Sets up and starts the countdown timer for the current level.
      */
     private void setupTimer() {
-        // Stop the existing timer if it is currently running
         if (countdownTimer != null) {
             countdownTimer.stop();
         }
+        
         timeLeft = MAX_TIME;
         timeBar.setValue(timeLeft);
 
         countdownTimer = new Timer(1000, e -> {
             timeLeft--;
             timeBar.setValue(timeLeft);
-            // check time left to change the time bar color
+            
+            // Change progress bar color based on remaining time to alert the player
             if (timeLeft <= (MAX_TIME - 2 * MAX_TIME / 10) && timeLeft > (MAX_TIME - 7 * MAX_TIME / 10)) {
-                timeBar.setForeground(Color.YELLOW);
+                timeBar.setForeground(Color.YELLOW); // Warning stage
             } else if (timeLeft < (MAX_TIME - 7 * MAX_TIME / 10)) {
-                timeBar.setForeground(Color.RED);
+                timeBar.setForeground(Color.RED);    // Critical stage
             }
 
-            // Trigger game over if the time runs out
+            // Trigger Game Over logic when time hits zero
             if (timeLeft <= 0) {
                 countdownTimer.stop();
                 handleGameOver();
@@ -274,16 +292,14 @@ public class InGame extends JPanel {
      * Starts the game by resetting necessary stats and generating the matrix.
      */
     private void startGame() {
-        // reset swapsAvailable value
         swapsAvailable = 3;
         swapsLabel.setText("Swaps: " + swapsAvailable);
         levelLabel.setText("Level: " + currentLevel);
 
-        // call gameLogic to create and get matrix
         gameLogic.createMatrix();
         progress = 0;
 
-        // start to map image and start the game
+        // Map the generated matrix to UI components
         level(gameLogic.getMatrix());
         playSound("sound4.wav");
 
@@ -291,62 +307,60 @@ public class InGame extends JPanel {
     }
 
     /**
-     * Sets up the game interface for the current level based on the provided
-     * matrix.
+     * Sets up the game interface for the current level based on the provided matrix.
+     * This method dynamically scales images and maps them to the grid layout.
      *
      * @param matrix The 2D array representing the game state.
      */
     private void level(int[][] matrix) {
+        // Clear previous board state
         gamePanel.removeAll();
         firstSelected = null;
-
-        // Reset the path array when loading/reloading the level matrix
         currentPath = null;
 
+        // --- Dynamic Scaling Logic ---
         int baseWidth = 40;
         int baseHeight = 50;
-
         double maxAvailableWidth = 1200.0;
         double maxAvailableHeight = 700.0;
 
-        // Calculate the scale ratios for width and height
+        // Calculate the scale ratios needed to fit the grid into the available screen space
         double scaleX = (maxAvailableWidth / cols) / baseWidth;
         double scaleY = (maxAvailableHeight / rows) / baseHeight;
 
-        // Determine the minimum scale to ensure it fits within the bounds
+        // Use the minimum scale to ensure no components are cut off
         double scale = Math.min(scaleX, scaleY);
-
-        // Constrain the scale factor between a minimum of 0.75 and a maximum of 1.5
+        
+        // Constrain the scale factor to prevent items from being too tiny or overly large
         scale = Math.max(0.75, Math.min(1.5, scale));
 
-        // Calculate final width and height dimensions using the constrained scale
+        // Apply scale to dimensions
         int finalWidth = (int) (baseWidth * scale);
         int finalHeight = (int) (baseHeight * scale);
         Dimension dynamicBtnSize = new Dimension(finalWidth, finalHeight);
 
+        // --- Load Assets ---
         ImageIcon[] pieceIcons = new ImageIcon[36];
-
-        // Loop through to load and scale all 36 piece icons
         for (int i = 0; i < 36; i++) {
             String fileName = "pieces" + (i + 1) + ".png";
             java.net.URL imgURL = getClass().getResource("/pikachu/img/" + fileName);
 
-            // Check if the image URL is valid before applying scale
             if (imgURL != null) {
+                // Scale the image smoothly to match the dynamically calculated button size
                 ImageIcon originalIcon = new ImageIcon(imgURL);
                 Image scaledImg = originalIcon.getImage().getScaledInstance(finalWidth, finalHeight, Image.SCALE_SMOOTH);
                 pieceIcons[i] = new ImageIcon(scaledImg);
             }
         }
 
+        // --- Grid Population ---
         int row = -1;
 
-        // Loop through the matrix grid to initialize buttons
+        // Loop through the 1D total item count and map to 2D matrix coordinates
         for (int i = 0; i < rows * cols; i++) {
-            // Calculate column index based on the current loop iteration
-            int col = i % cols;
+            int col = i % cols; // Calculate current column
 
-            // Increment row when column wraps around to 0
+            // When column wraps back to 0, move to the next row
             if (col == 0) {
                 row++;
             }
@@ -354,112 +368,117 @@ public class InGame extends JPanel {
             int currentImgID = matrix[row][col];
             PokemonNode btn = new PokemonNode(row, col, currentImgID);
 
-            // Verify if the current image ID is valid to show the icon, else hide the button
+            // -1 indicates an empty space (e.g., border cell or cleared Pokemon)
             if (currentImgID != -1) {
                 btn.setIcon(pieceIcons[currentImgID]);
-
             } else {
-                btn.setVisible(false);
+                btn.setVisible(false); // Hide the button to create empty space
             }
 
+            // Remove button styling to make images look seamless
             btn.setMargin(new Insets(0, 0, 0, 0));
             btn.setFocusPainted(false);
-
             btn.setPreferredSize(dynamicBtnSize);
             btn.setMinimumSize(dynamicBtnSize);
             btn.setMaximumSize(dynamicBtnSize);
 
             gamePanel.add(btn);
             
+            // --- Click Event Handling for Gameplay ---
             btn.addActionListener(e -> {
-                
                 PokemonNode currentClick = (PokemonNode) e.getSource();
 
-                // If this is the first button selected
+                // State 1: No button is currently selected
                 if (firstSelected == null) {
-                    firstButton = btn;
+                    firstButton = btn; 
                     firstSelected = currentClick;
-                    firstSelected.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+                    firstSelected.setBorder(BorderFactory.createLineBorder(Color.RED, 3)); // Highlight selection
                     playSound("sound2.wav");
-                } // If the user clicks the currently selected button again
+                } 
+                // State 2: User clicks the exact same button again (Deselect)
                 else if (firstSelected == currentClick) {
                     firstSelected.setBorder(BorderFactory.createEmptyBorder());
                     firstSelected = null;
                     playSound("sound1.wav");
-                } // If a second different button is clicked
+                } 
+                // State 3: A second, different button is selected (Attempt Connection)
                 else {
                     int id1 = firstSelected.getImageID();
                     int id2 = currentClick.getImageID();
 
                     // Check if both selected buttons have the same image ID
                     if (id1 == id2) {
-                        // Capture the returning path list from gameLogic instead of boolean
+                        // Request pathfinding algorithm to find a valid route
                         ArrayList<int[]> path = gameLogic.findPath(firstSelected, currentClick);
 
-                        // If a valid path exists between the two nodes (array is not null)
+                        // If a valid path exists (array is not null)
                         if (path != null) {
-                            // Set two buttons to disable to avoid user try to spams click 
+                            
+                            // FIX RACE CONDITION: Disable both buttons to prevent the user from spam-clicking 
+                            // them again while the path drawing animation is running.
+                            // The disabled icon is set to the normal icon so the visual doesn't turn gray.
                             firstButton.setEnabled(false);
                             firstButton.setDisabledIcon(firstButton.getIcon());
                             btn.setEnabled(false);
                             btn.setDisabledIcon(btn.getIcon());
                             
-                            // Add 20 points for a successful connection
                             score += 20;
 
-                            // SET THE PATH TO BE DRAWN AND REPAINT
+                            // Pass the path to the panel and trigger a repaint to draw the red line
                             currentPath = path;
                             gamePanel.repaint();
 
+                            // Save references for the timer execution
                             PokemonNode node1 = firstSelected;
                             PokemonNode node2 = currentClick;
 
-                            // DELAY: Increased from 150 to 400 to let the player clearly see the drawn red line
+                            // Delay action to let the user see the path before clearing the pieces
                             Timer timer = new Timer(150, t -> {
-                                currentPath = null; // Clear the drawn path
+                                currentPath = null; // Remove the red line
+                                
+                                // Update logic matrix to mark pieces as cleared, then refresh the UI
                                 level(gameLogic.updateMatrix(node1.getRow(), node1.getCol(), node2.getRow(), node2.getCol(), currentLevel));
 
-                                // If there are no valid moves left on the board, force a swap
+                                // Deadlock check: If no moves remain, force a matrix shuffle
                                 if (!gameLogic.checkValidMatrix() && progress < numberOfImage) {
                                     level(gameLogic.swapMatrix());
                                     playSound("sound4.wav");
                                 }
-                                
                             });
 
                             timer.setRepeats(false);
                             timer.start();
 
                             playSound("sound5.wav");
-                            // Increment progress by 2 since a pair is cleared
-                            progress += 2;
+                            progress += 2; // Increment progress (2 pieces removed)
 
-                            // If the board is fully cleared
+                            // Win Condition Check
                             if (progress >= numberOfImage) {
                                 handleLevelComplete();
                             }
-                        } // If path is invalid
+                        } 
+                        // Pathfinding failed (Same image, but blocked path)
                         else {
-                            if (score > 0) {
-                                score -= 10;
-                            }
+                            if (score > 0) score -= 10; // Penalty
                             firstSelected.setBorder(BorderFactory.createEmptyBorder());
                             playSound("sound1.wav");
                         }
-                    } // If the IDs do not match
+                    } 
+                    // IDs do not match (Different images selected)
                     else {
-                        if (score > 0) {
-                            score -= 10;
-                        }
+                        if (score > 0) score -= 10; // Penalty
                         playSound("sound1.wav");
                         firstSelected.setBorder(BorderFactory.createEmptyBorder());
                     }
+                    
+                    // Reset selection state and update UI
                     scoreLabel.setText("Score: " + score);
                     firstSelected = null;
                 }
             });
         }
 
+        // Revalidate and repaint to ensure the new grid is fully rendered
         gamePanel.revalidate();
         gamePanel.repaint();
     }
@@ -468,24 +487,27 @@ public class InGame extends JPanel {
      * Handles the transition logic when a level is successfully completed.
      */
     private void handleLevelComplete() {
-        // Stop the countdown timer to prevent overlaps before starting the next level
         if (countdownTimer != null) {
             countdownTimer.stop();
         }
 
         currentLevel++;
 
-        // Check if there are more levels remaining
+        // Proceed to next level if available
         if (currentLevel <= maxLevel) {
             JOptionPane.showMessageDialog(parent, "Congratulations! You finished level " + (currentLevel - 1));
             startGame();
-        } // If all levels are completed
+        } 
+        // All levels completed - Game Finished
         else {
             JOptionPane.showMessageDialog(parent, "Congratulations! You finished the game!");
+            
+            // Save the player's achievement
             Achievement achievement = new Achievement(score, difficulty);
             AchievementManager manager = new AchievementManager();
             manager.addAchievement(achievement);
 
+            // Return to main menu
             MenuUI menu = new MenuUI(parent);
             parent.switchPanel(menu);
         }
@@ -497,16 +519,14 @@ public class InGame extends JPanel {
      * @param soundFileName The name of the sound file to be played.
      */
     public void playSound(String soundFileName) {
-        // Return immediately if the mute flag is active
         if (isMuted) {
-            return;
+            return; // Skip sound playing if the game is muted
         }
 
         try {
             String soundPath = "/pikachu/sound/" + soundFileName;
             java.net.URL soundURL = InGame.class.getResource(soundPath);
 
-            // Verify if the sound file exists
             if (soundURL != null) {
                 javax.sound.sampled.AudioInputStream audioIn = javax.sound.sampled.AudioSystem.getAudioInputStream(soundURL);
                 javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
