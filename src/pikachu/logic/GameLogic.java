@@ -168,69 +168,65 @@ public class GameLogic {
     
 
     /**
-     * Finds the path with the fewest turns between two matching Pokemon tiles.
-     * Uses BFS with direction tracking and parent backtracking.
+     * Finds the shortest path (with the fewest turns) between two matching Pokemon tiles
+     * on the game board using BFS with direction tracking.
+     *
+     * The algorithm enforces the core Pikachu game rule: a valid connecting path
+     * may contain at most 2 turns (i.e., up to 3 straight-line segments). It uses a
+     * 3D visited array minTurns[row][col][direction] to prune suboptimal states
+     * and backtracks through parent pointers to reconstruct the result.
      *
      * @param pokemon1 the starting Pokemon tile
-     * @param pokemon2 the target Pokemon tile
-     * @return ArrayList<int[]> if a valid path exists; null otherwise
+     * @param pokemon2 the target Pokemon tile (must have the same image ID as pokemon1)
+     * @return an ordered list of int[]{row, col} coordinates from source to target
+     *         representing the connecting path, or null if no valid path exists
      */
     public ArrayList<int[]> findPath(PokemonNode pokemon1, PokemonNode pokemon2) {
 
-        // 4 corresponding movement directions: Up, Down, Left, Right
-        int[] fx = {0, 0, -1, 1}; // Change on the horizontal axis (Column)
-        int[] fy = {-1, 1, 0, 0}; // Change on the vertical axis (Row)
+        int[] fx = {0, 0, -1, 1}; // column offsets for 4 directions: up, down, left, right
+        int[] fy = {-1, 1, 0, 0}; // row offsets for 4 directions: up, down, left, right
 
-        // minTurns[row][col][dir] = minimum turns to reach (row,col) from direction dir
-        int[][][] minTurns = new int[this.rows + 2][this.cols + 2][4];
+        int[][][] minTurns = new int[this.rows + 2][this.cols + 2][4]; // tracks min turns to reach each cell from each direction
         for (int[][] layer : minTurns)
             for (int[] row : layer)
-                Arrays.fill(row, Integer.MAX_VALUE);
+                Arrays.fill(row, Integer.MAX_VALUE); // initialize all cells as unvisited
 
         Queue<Node> q = new LinkedList<>();
 
-        // Starting point: Direction = -1 (no direction yet), Number of turns = 0, no parent
-        q.add(new Node(pokemon1.getRow(), pokemon1.getCol(), -1, 0, null));
+        q.add(new Node(pokemon1.getRow(), pokemon1.getCol(), -1, 0, null)); // enqueue start cell with no initial direction
 
-        Node bestEnd = null;
+        Node bestEnd = null; // stores the best path found to the target
 
         while (!q.isEmpty()) {
-            Node currentNode = q.poll();
+            Node currentNode = q.poll(); // dequeue the next node to process
 
-            // If the second Pokemon's cell has been reached
-            if (currentNode.col == pokemon2.getCol() && currentNode.row == pokemon2.getRow()) {
+            if (currentNode.col == pokemon2.getCol() && currentNode.row == pokemon2.getRow()) { // reached the target cell
                 if (bestEnd == null || currentNode.turns < bestEnd.turns) {
-                    bestEnd = currentNode;
+                    bestEnd = currentNode; // update best result if this path has fewer turns
                 }
-                continue; // Keep searching for a path with fewer turns
+                continue; // continue BFS to find potentially better paths
             }
 
-            // Traverse the 4 directions around the current cell
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 4; i++) { // explore all 4 adjacent directions
                 int nextCol = currentNode.col + fx[i];
                 int nextRow = currentNode.row + fy[i];
 
-                // 1. Check whether the next cell is within the matrix boundaries
-                if (nextCol >= 0 && nextCol < this.cols + 2 && nextRow >= 0 && nextRow < this.rows + 2) {
+                if (nextCol >= 0 && nextCol < this.cols + 2 && nextRow >= 0 && nextRow < this.rows + 2) { // bounds check
 
-                    // Calculate the number of turns if changing direction to `i`
-                    int nextTurns = currentNode.turns;
+                    int nextTurns = currentNode.turns; // carry forward current turn count
                     if (currentNode.direction != -1 && currentNode.direction != i) {
-                        nextTurns++;
+                        nextTurns++; // increment turns when direction changes
                     }
 
-                    // Core Pikachu rule: the number of turns must not exceed 2
-                    if (nextTurns <= 2) {
+                    if (nextTurns <= 2) { // Pikachu rule: path can have at most 2 turns
 
-                        // Check whether the next cell is an empty cell (-1) or the target cell
-                        boolean isEmptySpace = (matrix[nextRow][nextCol] == -1);
-                        boolean isTarget = (nextCol == pokemon2.getCol() && nextRow == pokemon2.getRow());
+                        boolean isEmptySpace = (matrix[nextRow][nextCol] == -1); // cell is walkable
+                        boolean isTarget = (nextCol == pokemon2.getCol() && nextRow == pokemon2.getRow()); // cell is the destination
 
                         if (isEmptySpace || isTarget) {
-                            // Only enqueue if we found a better (fewer turns) way to reach this cell
-                            if (nextTurns < minTurns[nextRow][nextCol][i]) {
-                                minTurns[nextRow][nextCol][i] = nextTurns;
-                                q.add(new Node(nextRow, nextCol, i, nextTurns, currentNode));
+                            if (nextTurns < minTurns[nextRow][nextCol][i]) { // only proceed if this is a better route
+                                minTurns[nextRow][nextCol][i] = nextTurns; // record the improved turn count
+                                q.add(new Node(nextRow, nextCol, i, nextTurns, currentNode)); // enqueue neighbor for further exploration
                             }
                         }
                     }
@@ -238,57 +234,77 @@ public class GameLogic {
             }
         }
 
-        // Backtrack from target to source using parent pointers
         if (bestEnd == null) {
-            return null; // Không tìm thấy đường đi nào hợp lệ
+            return null; // no valid path found
         }
 
-        ArrayList<int[]> path = new ArrayList<>(); 
+        ArrayList<int[]> path = new ArrayList<>(); // reconstruct path by backtracking through parent pointers
         Node trace = bestEnd;
         
         while (trace != null) {
-            path.add(new int[]{trace.row, trace.col});
+            path.add(new int[]{trace.row, trace.col}); // add each node's position to the path
             trace = trace.parent;
         }
-        Collections.reverse(path); // Reverse to get source -> target order
+        Collections.reverse(path); // reverse to get source-to-target order
         
-        // Trả trực tiếp kết quả, không lưu vào lastPath nữa
         return path;
     }
 
 
 
 
+    /**
+     * Updates the game matrix after a successful tile match by removing the two matched
+     * tiles and applying a level-specific gravity or flow effect.
+     *
+     * The matched cells are set to -1 (empty), then the remaining tiles are
+     * shifted according to the current game level:
+     *   - Level 2: tiles shift down
+     *   - Level 3: tiles shift up
+     *   - Level 4: tiles shift right
+     *   - Level 5: tiles shift left
+     *   - Level 6: tiles collapse inward horizontally
+     *   - Level 7: tiles expand outward horizontally
+     *   - Level 8: tiles collapse inward vertically
+     *   - Level 9: tiles expand outward vertically
+     *
+     * @param x1    row index of the first matched tile
+     * @param y1    column index of the first matched tile
+     * @param x2    row index of the second matched tile
+     * @param y2    column index of the second matched tile
+     * @param level the current game level that determines the flow effect
+     * @return the updated game matrix after removal and shifting
+     */
     public int[][] updateMatrix(int x1, int y1, int x2, int y2, int level) {
-        matrix[x1][y1] = -1;
-        matrix[x2][y2] = -1;
+        matrix[x1][y1] = -1; // mark first matched cell as empty
+        matrix[x2][y2] = -1; // mark second matched cell as empty
 
-        switch (level) {
+        switch (level) { // apply gravity/flow effect based on the current game level
             case 2:
-                matrix = gameFlows.shiftDown(matrix);
+                matrix = gameFlows.shiftDown(matrix); // tiles fall downward
                 break;
             case 3:
-                matrix = gameFlows.shiftUp(matrix);
+                matrix = gameFlows.shiftUp(matrix); // tiles float upward
                 break;
             case 4:
-                matrix = gameFlows.shiftRight(matrix);
+                matrix = gameFlows.shiftRight(matrix); // tiles slide to the right
                 break;
             case 5:
-                matrix = gameFlows.shiftLeft(matrix);
+                matrix = gameFlows.shiftLeft(matrix); // tiles slide to the left
                 break;
             case 6:
-                matrix = gameFlows.shiftInwardX(matrix);
+                matrix = gameFlows.shiftInwardX(matrix); // tiles collapse horizontally toward center
                 break;
             case 7:
-                matrix = gameFlows.shiftOutwardX(matrix);
+                matrix = gameFlows.shiftOutwardX(matrix); // tiles expand horizontally from center
                 break;
             case 8:
-                matrix = gameFlows.shiftInwardY(matrix);
+                matrix = gameFlows.shiftInwardY(matrix); // tiles collapse vertically toward center
                 break;
             case 9:
-                matrix = gameFlows.shiftOutwardY(matrix);
+                matrix = gameFlows.shiftOutwardY(matrix); // tiles expand vertically from center
                 break;
         }
-        return matrix;
+        return matrix; // return the updated board state
     }
 }
