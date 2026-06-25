@@ -84,9 +84,15 @@ public class MenuUI extends JPanel {
         this.add(createMenuButton("Start"), gbc);
 
         gbc.gridy = 2;
-        this.add(createMenuButton("Achievement"), gbc);
+        this.add(createMenuButton("How to play"), gbc);
 
         gbc.gridy = 3;
+        this.add(createMenuButton("About us"), gbc);
+
+        gbc.gridy = 4;
+        this.add(createMenuButton("Achievement"), gbc);
+
+        gbc.gridy = 5;
         this.add(createMenuButton("Exit"), gbc);
     }
 
@@ -103,7 +109,10 @@ public class MenuUI extends JPanel {
         button.setBackground(new Color(255, 204, 0));
         button.setForeground(Color.BLACK);
         button.setFocusPainted(false);
-        button.addActionListener(e -> handleMenuAction(text)); // Delegate click handling
+        button.addActionListener(e -> {
+            parent.playSound("sound2.wav");
+            handleMenuAction(text);
+        }); // Delegate click handling
         return button;
     }
 
@@ -118,9 +127,91 @@ public class MenuUI extends JPanel {
     private void handleMenuAction(String action) {
         switch (action) {
             case "Start" -> openDifficultyDialog();
+            case "How to play" -> showHowToPlay();
+            case "About us" -> showAboutUs();
             case "Achievement" -> showAchievements();
-            case "Exit" -> System.exit(0);
+            case "Exit" -> {
+                JOptionPane.showMessageDialog(parent, "Goodbye and see you again!", "Quit", JOptionPane.INFORMATION_MESSAGE);
+                System.exit(0);
+            }
         }
+    }
+
+    private void showHowToPlay() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("How to play Pikachu Classic:\n\n");
+        builder.append("Step 1: Click Start and choose a difficulty level.\n");
+        builder.append("Step 2: Find two Pokemon tiles with the same image.\n");
+        builder.append("Step 3: Select both tiles to connect them.\n");
+        builder.append("Step 4: A pair is removed only when the path has no more than 3 straight lines.\n");
+        builder.append("Step 5: Clear all tiles before the time runs out.\n");
+        builder.append("Step 6: Use Swap when there are no easy moves left.\n");
+        builder.append("Step 7: Complete the board to win and continue to the next level.");
+
+        JTextArea display = new JTextArea(builder.toString());
+        display.setEditable(false);
+        display.setBackground(this.getBackground());
+        display.setFont(new Font("Arial", Font.PLAIN, 16));
+        display.setBorder(null);
+        display.setLineWrap(true);
+        display.setWrapStyleWord(true);
+
+        JOptionPane.showMessageDialog(parent, new JScrollPane(display), "How to play", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showAboutUs() {
+        JPanel aboutPanel = new JPanel(new GridBagLayout());
+        aboutPanel.setBackground(new Color(255, 248, 220));
+        aboutPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 204, 0), 3),
+                BorderFactory.createEmptyBorder(18, 24, 18, 24)
+        ));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+
+        JLabel title = new JLabel("PIKACHU CLASSIC - ABOUT US", SwingConstants.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 22));
+        title.setForeground(new Color(230, 126, 34));
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 0, 16, 0);
+        aboutPanel.add(title, gbc);
+
+        addAboutSection(aboutPanel, gbc, 1, "Course Information");
+        addAboutLine(aboutPanel, gbc, 2, "School: FPT University");
+        addAboutLine(aboutPanel, gbc, 3, "Class: SE");
+        addAboutLine(aboutPanel, gbc, 4, "Semester: Summer 2026");
+        addAboutLine(aboutPanel, gbc, 5, "Subject: CSD201");
+
+        addAboutSection(aboutPanel, gbc, 6, "Team Members");
+        addAboutLine(aboutPanel, gbc, 7, "1. MSSV - Full name");
+        addAboutLine(aboutPanel, gbc, 8, "2. MSSV - Full name");
+        addAboutLine(aboutPanel, gbc, 9, "3. MSSV - Full name");
+
+        addAboutSection(aboutPanel, gbc, 10, "Mentor");
+        addAboutLine(aboutPanel, gbc, 11, "Mentor name");
+
+        JOptionPane.showMessageDialog(parent, aboutPanel, "About us", JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private void addAboutSection(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Arial", Font.BOLD, 16));
+        label.setForeground(new Color(52, 73, 94));
+        gbc.gridy = row;
+        gbc.insets = new Insets(row == 1 ? 0 : 14, 0, 6, 0);
+        panel.add(label, gbc);
+    }
+
+    private void addAboutLine(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Arial", Font.PLAIN, 15));
+        label.setForeground(Color.BLACK);
+        gbc.gridy = row;
+        gbc.insets = new Insets(2, 14, 2, 0);
+        panel.add(label, gbc);
     }
 
     /**
