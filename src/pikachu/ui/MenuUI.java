@@ -127,6 +127,7 @@ public class MenuUI extends JPanel {
     private void handleMenuAction(String action) {
         switch (action) {
             case "Start" -> openDifficultyDialog();
+            // Open the tutorial as a full screen panel instead of a small dialog.
             case "How to play" -> parent.switchPanel(new Tutorial(this.parent));
             case "About us" -> showAboutUs();
             case "Achievement" -> showAchievements();
@@ -138,6 +139,7 @@ public class MenuUI extends JPanel {
     }
 
     private void showAboutUs() {
+        // Use the same warm card style as other information dialogs in the menu.
         JPanel aboutPanel = new JPanel(new GridBagLayout());
         aboutPanel.setBackground(new Color(255, 248, 220));
         aboutPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -150,6 +152,7 @@ public class MenuUI extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
+        // Dialog title is separated from the content to make the author information easier to scan.
         JLabel title = new JLabel("PIKACHU CLASSIC - ABOUT US", SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 22));
         title.setForeground(new Color(230, 126, 34));
@@ -179,6 +182,7 @@ public class MenuUI extends JPanel {
     }
 
     private void addAboutSection(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        // Section labels group related information such as course, members, and mentor.
         JLabel label = new JLabel(text);
         label.setFont(new Font("Arial", Font.BOLD, 16));
         label.setForeground(new Color(52, 73, 94));
@@ -188,6 +192,7 @@ public class MenuUI extends JPanel {
     }
 
     private void addAboutLine(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        // Content rows are indented under each section title for a cleaner layout.
         JLabel label = new JLabel(text);
         label.setFont(new Font("Arial", Font.PLAIN, 15));
         label.setForeground(Color.BLACK);
@@ -204,6 +209,7 @@ public class MenuUI extends JPanel {
      * - Hard -> new InGame(12, 18, "Hard", parent)
      */
     private void openDifficultyDialog() {
+        // The selected difficulty controls board size and is passed directly to InGame.
         String[] options = {"Easy", "Normal", "Hard", "Cancel"};
         int choice = JOptionPane.showOptionDialog(
                 parent,
@@ -230,12 +236,14 @@ public class MenuUI extends JPanel {
      * Uses AchievementManager.getTopAchievements(5, difficulty).
      */
     private void showAchievements() {
+        // Each tab represents one difficulty, so players can compare scores without reopening dialogs.
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Arial", Font.BOLD, 15));
         tabbedPane.setBackground(new Color(255, 248, 220));
 
         String[] difficulties = {"Easy", "Normal", "Hard"};
         for (String difficulty : difficulties) {
+            // Reuse the About us visual style for a consistent menu experience.
             JPanel achievementPanel = new JPanel(new GridBagLayout());
             achievementPanel.setBackground(new Color(255, 248, 220));
             achievementPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -255,6 +263,7 @@ public class MenuUI extends JPanel {
             gbc.insets = new Insets(0, 0, 16, 0);
             achievementPanel.add(title, gbc);
 
+            // AchievementManager returns scores sorted from highest to lowest.
             List<Achievement> top = achievementManager.getTopAchievements(5, difficulty);
             if (top.isEmpty()) {
                 JLabel emptyLabel = new JLabel("No achievements yet for " + difficulty + ".");
