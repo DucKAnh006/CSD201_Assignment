@@ -137,28 +137,6 @@ public class MenuUI extends JPanel {
         }
     }
 
-    private void showHowToPlay() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("How to play Pikachu Classic:\n\n");
-        builder.append("Step 1: Click Start and choose a difficulty level.\n");
-        builder.append("Step 2: Find two Pokemon tiles with the same image.\n");
-        builder.append("Step 3: Select both tiles to connect them.\n");
-        builder.append("Step 4: A pair is removed only when the path has no more than 3 straight lines.\n");
-        builder.append("Step 5: Clear all tiles before the time runs out.\n");
-        builder.append("Step 6: Use Swap when there are no easy moves left.\n");
-        builder.append("Step 7: Complete the board to win and continue to the next level.");
-
-        JTextArea display = new JTextArea(builder.toString());
-        display.setEditable(false);
-        display.setBackground(this.getBackground());
-        display.setFont(new Font("Arial", Font.PLAIN, 16));
-        display.setBorder(null);
-        display.setLineWrap(true);
-        display.setWrapStyleWord(true);
-
-        JOptionPane.showMessageDialog(parent, new JScrollPane(display), "How to play", JOptionPane.INFORMATION_MESSAGE);
-    }
-
     private void showAboutUs() {
         JPanel aboutPanel = new JPanel(new GridBagLayout());
         aboutPanel.setBackground(new Color(255, 248, 220));
