@@ -127,7 +127,7 @@ public class MenuUI extends JPanel {
     private void handleMenuAction(String action) {
         switch (action) {
             case "Start" -> openDifficultyDialog();
-            case "How to play" -> showHowToPlay();
+            case "How to play" -> parent.switchPanel(new Tutorial(this.parent));
             case "About us" -> showAboutUs();
             case "Achievement" -> showAchievements();
             case "Exit" -> {
@@ -186,12 +186,16 @@ public class MenuUI extends JPanel {
         addAboutLine(aboutPanel, gbc, 5, "Subject: CSD201");
 
         addAboutSection(aboutPanel, gbc, 6, "Team Members");
-        addAboutLine(aboutPanel, gbc, 7, "1. MSSV - Full name");
-        addAboutLine(aboutPanel, gbc, 8, "2. MSSV - Full name");
-        addAboutLine(aboutPanel, gbc, 9, "3. MSSV - Full name");
+        addAboutLine(aboutPanel, gbc, 7, "1. CE200031 - Nguyễn Trần Đức Anh");
+        addAboutLine(aboutPanel, gbc, 8, "2. CE200291 - Trần Huỳnh Giác");
+        addAboutLine(aboutPanel, gbc, 9, "3. CE200340 - Nguyễn Phú Trọng");
+        addAboutLine(aboutPanel, gbc, 10, "4. CE201046 - Lê Tiến Dũng");
+        addAboutLine(aboutPanel, gbc,11, "5. CE201224 - Huỳnh Nhật Duy");
+        addAboutLine(aboutPanel, gbc, 12, "6. CE181332 - Nguyễn Lâm Hoàng Long");
 
-        addAboutSection(aboutPanel, gbc, 10, "Mentor");
-        addAboutLine(aboutPanel, gbc, 11, "Mentor name");
+
+        addAboutSection(aboutPanel, gbc, 13, "Mentor");
+        addAboutLine(aboutPanel, gbc, 14, "Mentor LanLTT");
 
         JOptionPane.showMessageDialog(parent, aboutPanel, "About us", JOptionPane.PLAIN_MESSAGE);
     }
@@ -245,52 +249,59 @@ public class MenuUI extends JPanel {
 
     /**
      * Show a dialog to choose difficulty and then display top achievements for that difficulty.
-     * Uses AchievementManager.getTopAchievements(8, selectedDifficulty).
+     * Uses AchievementManager.getTopAchievements(5, difficulty).
      */
     private void showAchievements() {
-        String[] options = {"Easy", "Normal", "Hard", "Cancel"};
-        int choice = JOptionPane.showOptionDialog(
-                parent,
-                "Select difficulty to view top scores",
-                "Achievements - Select Difficulty",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                options,
-                options[1]
-        );
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font("Arial", Font.BOLD, 15));
+        tabbedPane.setBackground(new Color(255, 248, 220));
 
-        if (choice < 0 || choice >= 3) return;
-        String selectedDifficulty = options[choice];
+        String[] difficulties = {"Easy", "Normal", "Hard"};
+        for (String difficulty : difficulties) {
+            JPanel achievementPanel = new JPanel(new GridBagLayout());
+            achievementPanel.setBackground(new Color(255, 248, 220));
+            achievementPanel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(255, 204, 0), 3),
+                    BorderFactory.createEmptyBorder(18, 24, 18, 24)
+            ));
 
-        // Query top 8 scores for the chosen difficulty
-        List<Achievement> top = achievementManager.getTopAchievements(8, selectedDifficulty);
-        if (top.isEmpty()) {
-            JOptionPane.showMessageDialog(parent, "No achievements yet for " + selectedDifficulty + ".", "Top Scores", JOptionPane.INFORMATION_MESSAGE);
-            return;
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.anchor = GridBagConstraints.WEST;
+
+            JLabel title = new JLabel("TOP 5 HIGH SCORES - " + difficulty.toUpperCase(), SwingConstants.CENTER);
+            title.setFont(new Font("Arial", Font.BOLD, 22));
+            title.setForeground(new Color(230, 126, 34));
+            gbc.gridy = 0;
+            gbc.insets = new Insets(0, 0, 16, 0);
+            achievementPanel.add(title, gbc);
+
+            List<Achievement> top = achievementManager.getTopAchievements(5, difficulty);
+            if (top.isEmpty()) {
+                JLabel emptyLabel = new JLabel("No achievements yet for " + difficulty + ".");
+                emptyLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+                emptyLabel.setForeground(Color.BLACK);
+                gbc.gridy = 1;
+                gbc.insets = new Insets(2, 14, 2, 0);
+                achievementPanel.add(emptyLabel, gbc);
+            } else {
+                int rank = 1;
+                for (Achievement achievement : top) {
+                    JLabel scoreLabel = new JLabel(rank + ". " + achievement.getScore() + " points");
+                    scoreLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+                    scoreLabel.setForeground(Color.BLACK);
+                    gbc.gridy = rank;
+                    gbc.insets = new Insets(2, 14, 2, 0);
+                    achievementPanel.add(scoreLabel, gbc);
+                    rank++;
+                }
+            }
+
+            tabbedPane.addTab(difficulty, achievementPanel);
         }
 
-        // Build a simple textual representation of the top scores
-        StringBuilder builder = new StringBuilder();
-        builder.append("Top 8 High Scores (").append(selectedDifficulty).append("):\n\n");
-        int rank = 1;
-        for (Achievement achievement : top) {
-            builder.append(rank)
-                    .append(". ")
-                    .append(achievement.getScore())
-                    .append(" points - ")
-                    .append(achievement.getDifficulty())
-                    .append("\n");
-            rank++;
-        }
-
-        JTextArea display = new JTextArea(builder.toString());
-        display.setEditable(false);
-        display.setBackground(this.getBackground());
-        display.setFont(new Font("Arial", Font.PLAIN, 16));
-        display.setBorder(null);
-
-        JOptionPane.showMessageDialog(parent, new JScrollPane(display), "Achievements", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(parent, tabbedPane, "Achievements", JOptionPane.PLAIN_MESSAGE);
     }
 
     /**
