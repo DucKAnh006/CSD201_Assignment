@@ -128,7 +128,7 @@ public class MenuUI extends JPanel {
         switch (action) {
             case "Start" -> openDifficultyDialog();
             // Open the tutorial as a full screen panel instead of a small dialog.
-            case "How to play" -> parent.switchPanel(new Tutorial(this.parent));
+            // case "How to play" -> parent.switchPanel(new Tutorial(this.parent));
             case "About us" -> showAboutUs();
             case "Achievement" -> showAchievements();
             case "Exit" -> {
@@ -162,7 +162,7 @@ public class MenuUI extends JPanel {
 
         addAboutSection(aboutPanel, gbc, 1, "Course Information");
         addAboutLine(aboutPanel, gbc, 2, "School: FPT University");
-        addAboutLine(aboutPanel, gbc, 3, "Class: SE");
+        addAboutLine(aboutPanel, gbc, 3, "Class: SE2002");
         addAboutLine(aboutPanel, gbc, 4, "Semester: Summer 2026");
         addAboutLine(aboutPanel, gbc, 5, "Subject: CSD201");
 
@@ -176,7 +176,7 @@ public class MenuUI extends JPanel {
 
 
         addAboutSection(aboutPanel, gbc, 13, "Mentor");
-        addAboutLine(aboutPanel, gbc, 14, "Mentor LanLTT");
+        addAboutLine(aboutPanel, gbc, 14, "Mentor Lê Thị Thu Lan");
 
         JOptionPane.showMessageDialog(parent, aboutPanel, "About us", JOptionPane.PLAIN_MESSAGE);
     }
