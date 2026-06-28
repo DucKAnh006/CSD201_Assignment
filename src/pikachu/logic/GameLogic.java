@@ -83,6 +83,12 @@ public class GameLogic {
         this.matrix = new int[x + 2][y + 2];
     }
     
+    public GameLogic(int[][] matrix) {
+        this.matrix = matrix;
+        this.rows = matrix.length - 2;
+        this.cols = matrix[0].length - 2;
+    }
+    
     /**
      * Generates a new Pikachu game board.
      *

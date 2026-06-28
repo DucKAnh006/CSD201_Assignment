@@ -84,7 +84,7 @@ public class InGame extends JPanel {
 
     // --- Game Stats & UI Components ---
     private int score = 0;               // Player's current score
-    private int swapsAvailable = 3;      // Number of matrix shuffles available to the player
+    private int swapsAvailable = 10;      // Number of matrix shuffles available to the player
     private boolean isMuted = false;     // Flag to control sound effects
 
     private JLabel scoreLabel;
@@ -108,6 +108,7 @@ public class InGame extends JPanel {
      */
     public InGame(int x, int y, String difficulty, MainFrame parent) {
         this.parent = parent;
+        this.isMuted = parent.isMuted();
 
         // Add 2 to rows and cols to account for the outer empty borders required for pathfinding
         this.rows = x + 2;
@@ -182,6 +183,7 @@ public class InGame extends JPanel {
         // Action: Toggle Sound
         btnMute.addActionListener(e -> {
             isMuted = !isMuted;
+            parent.setMuted(isMuted);
             btnMute.setText(isMuted ? "Unmute" : "Mute");
         });
 
@@ -193,6 +195,7 @@ public class InGame extends JPanel {
                 level(gameLogic.swapMatrix()); // Reload the level with the new matrix
                 playSound("sound4.wav");
             } else {
+                playSound("sound1.wav");
                 JOptionPane.showMessageDialog(this, "No swaps available!");
             }
         });
@@ -255,6 +258,15 @@ public class InGame extends JPanel {
     }
 
     /**
+     * Plays a sound file given its file name.
+     *
+     * @param soundFileName The name of the sound file to be played.
+     */
+    public void playSound(String soundFileName) {
+        parent.playSound(soundFileName);
+    }
+
+    /**
      * Sets up and starts the countdown timer for the current level.
      */
     private void setupTimer() {
@@ -268,9 +280,11 @@ public class InGame extends JPanel {
         countdownTimer = new Timer(1000, e -> {
             timeLeft--;
             timeBar.setValue(timeLeft);
-
+            
             // Change progress bar color based on remaining time to alert the player
-            if (timeLeft <= (MAX_TIME - 2 * MAX_TIME / 10) && timeLeft > (MAX_TIME - 7 * MAX_TIME / 10)) {
+            if (timeLeft <= MAX_TIME && timeLeft > (MAX_TIME - 2 * MAX_TIME / 10)) {
+                timeBar.setForeground(Color.GREEN); // Warning stage
+            } else if (timeLeft <= (MAX_TIME - 2 * MAX_TIME / 10) && timeLeft > (MAX_TIME - 7 * MAX_TIME / 10)) {
                 timeBar.setForeground(Color.YELLOW); // Warning stage
             } else if (timeLeft < (MAX_TIME - 7 * MAX_TIME / 10)) {
                 timeBar.setForeground(Color.RED);    // Critical stage
@@ -289,6 +303,7 @@ public class InGame extends JPanel {
      * Handles the logic when the game is over (e.g., time runs out).
      */
     private void handleGameOver() {
+        playSound("sound1.wav");
         JOptionPane.showMessageDialog(parent, "Time's up! You lose.");
         MenuUI menu = new MenuUI(parent);
         parent.switchPanel(menu);
@@ -298,7 +313,6 @@ public class InGame extends JPanel {
      * Starts the game by resetting necessary stats and generating the matrix.
      */
     private void startGame() {
-        swapsAvailable = 3;
         swapsLabel.setText("Swaps: " + swapsAvailable);
         levelLabel.setText("Level: " + currentLevel);
 
@@ -472,8 +486,15 @@ public class InGame extends JPanel {
 
                             // Deadlock check: If no moves remain, force a matrix shuffle
                             if (!gameLogic.checkValidMatrix() && progress < numberOfImage) {
-                                level(gameLogic.swapMatrix());
-                                playSound("sound4.wav");
+                                if (swapsAvailable == 0) {
+                                    gamePanel.repaint();
+                                    handleGameOver();
+                                } else {
+                                    level(gameLogic.swapMatrix());
+                                    swapsAvailable--;
+                                    swapsLabel.setText("Swaps: " + swapsAvailable);
+                                    playSound("sound1.wav");
+                                }
                             }
 
                             timer.setRepeats(false);
@@ -527,6 +548,7 @@ public class InGame extends JPanel {
         // Proceed to next level if available
         if (currentLevel <= maxLevel) {
             JOptionPane.showMessageDialog(parent, "Congratulations! You finished level " + (currentLevel - 1));
+            swapsAvailable++;
             startGame();
         } // All levels completed - Game Finished
         else {
@@ -540,39 +562,6 @@ public class InGame extends JPanel {
             // Return to main menu
             MenuUI menu = new MenuUI(parent);
             parent.switchPanel(menu);
-        }
-    }
-
-    /**
-     * Plays a sound file given its file name.
-     *
-     * @param soundFileName The name of the sound file to be played.
-     */
-    public void playSound(String soundFileName) {
-        if (isMuted) {
-            return; // Skip sound playing if the game is muted
-        }
-
-        try {
-            String soundPath = "/pikachu/sound/" + soundFileName;
-            java.net.URL soundURL = InGame.class.getResource(soundPath);
-
-            if (soundURL != null) {
-                javax.sound.sampled.AudioInputStream audioIn = javax.sound.sampled.AudioSystem.getAudioInputStream(soundURL);
-                javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
-                clip.open(audioIn);
-                clip.start();
-                Timer timer = new Timer(3000, t -> {
-                    clip.close();
-                });
-
-                timer.setRepeats(false);
-                timer.start();
-            } else {
-                System.out.println("Error: Can not find sound with path: " + soundFileName);
-            }
-        } catch (Exception e) {
-            System.out.println("Can not play sound: " + e.getMessage());
         }
     }
 }
