@@ -110,27 +110,27 @@ public class Tutorial extends JPanel {
     private JButton btnReturnMenu;
     private int currentTutorialStep = 0;
     private String[] tutorialSteps = {
-        "Chào bạn! Chào mừng đến với Pikachu Classic. Để mình hướng dẫn bạn cách chơi nhé!",
-        "Ở góc bên trái. Đầu tiên là thông tin Level.",
-        "Thứ hai là điểm số của bạn trong quá trình chơi (Score).",
-        "Và cuối cùng số lần bạn được phép đổi mới bảng (Swaps).",
-        "Mỗi lần bạn nhấn làm mới bảng hay trò chơi phát hiện không còn đường đi khả dụng thì vị trí các hình ảnh sẽ được thay đổi và số lần khả dụng sẽ giảm.",
-        "Nhưng bạn yên tâm vì sau mỗi bàn bạn sẽ được tặng một lần làm mới bảng.",
-        "Thanh màu xanh phía trên là thời gian. Bạn phải hoàn thành màn chơi trước khi hết giờ!",
-        "Phần ở giữa là bảng game. Hãy tìm 2 hình giống nhau và click vào chúng để kết nối.",
-        "Bạn có thể nối 2 hình nếu đường nối giữa chúng có tối đa 2 lần rẽ (3 đoạn thẳng).",
-        "Cùng thử nhé",
-        "Đầu tiên là những hình ảnh trên cùng một đường thẳng. Hãy click thử vào cặp hình nhé!",
+        "Hello! Welcome to Pikachu Classic. Let me show you how to play!",
+        "On the left corner. First is the Level information.",
+        "Second is your score during the game (Score).",
+        "And finally, the number of times you are allowed to refresh the board (Swaps).",
+        "Every time you manually refresh the board or the game detects no valid moves, the images will be shuffled and the available swaps will decrease.",
+        "But don't worry, after completing each level, you will be rewarded with an extra swap.",
+        "The green bar at the top represents time. You must finish the level before the time runs out!",
+        "The center section is the game board. Find 2 identical images and click on them to connect.",
+        "You can connect 2 images if the path between them has a maximum of 2 turns (3 straight lines).",
+        "Let's try it out!",
+        "First are the images on the same straight line. Try clicking on this pair!",
         "",
-        "Tiếp theo là các hình ảnh có thể kết nối bằng 1 lần rẽ. Bạn hãy tìm và nối chúng.",
+        "Next are images that can be connected with 1 turn. Find and connect them.",
         "",
-        "Cuối cùng là các hình ảnh có thể kết nối bằng 2 lần rẽ (tối đa 3 đoạn thẳng).",
+        "Finally, images that can be connected with 2 turns (up to 3 straight lines).",
         "",
-        "Bên dưới là các nút: Tắt âm (Mute)",
-        "Đổi bảng (Swap)",
-        "Màn chơi mới (New Game)",
-        "Cuối cùng là Menu.",
-        "Chúc bạn chơi game vui vẻ nhé!"
+        "Below are the buttons: Mute",
+        "Swap Matrix",
+        "New Game",
+        "And finally, Menu.",
+        "Have fun playing the game!"
     };
 
     /**
@@ -328,6 +328,10 @@ public class Tutorial extends JPanel {
         startGame();
     }
     
+    /**
+     * Clears all highlighting borders from the UI components.
+     * This is used to reset the visual focus when moving between tutorial steps.
+     */
     private void clearHighlights() {
         if (levelLabel != null) levelLabel.setBorder(BorderFactory.createEmptyBorder());
         if (scoreLabel != null) scoreLabel.setBorder(BorderFactory.createEmptyBorder());
@@ -341,6 +345,11 @@ public class Tutorial extends JPanel {
         if (btnMenu != null && defaultButtonBorder != null) btnMenu.setBorder(defaultButtonBorder);
     }
 
+    /**
+     * Advances the tutorial to the next step.
+     * Updates the dialog text, highlights relevant UI components,
+     * and sets up specific matrix states for interactive steps.
+     */
     private void nextTutorialStep() {
         dialogText.setVisible(true);
         overlayPanel.setVisible(true);
@@ -377,11 +386,15 @@ public class Tutorial extends JPanel {
         }
     }
 
+    /**
+     * Finishes the tutorial and presents the user with options to either
+     * review the tutorial again or return to the main menu.
+     */
     private void endTutorial() {
         clearHighlights();
         overlayPanel.setVisible(true);
         dialogText.setVisible(true);
-        dialogText.setText("Bạn đã nắm được cách chơi rồi. Bạn muốn xem lại hướng dẫn hay về menu?");
+        dialogText.setText("You've got the hang of it. Do you want to review the tutorial or return to the menu?");
         
         btnSkip.setVisible(false);
         btnNext.setVisible(false);
@@ -635,6 +648,13 @@ public class Tutorial extends JPanel {
         gamePanel.repaint();
     }
 
+    /**
+     * Loads a specific predefined matrix layout for the tutorial.
+     * These layouts are designed to demonstrate different connection types
+     * (straight line, 1 turn, 2 turns).
+     *
+     * @param type The type of tutorial layout to load (1: straight, 2: 1 turn, 3: 2 turns).
+     */
     private void loadTutorialMatrix(int type) {
         int[][] m = new int[rows][cols];
         for(int[] r : m) Arrays.fill(r, -1);

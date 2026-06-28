@@ -55,6 +55,12 @@ public class MainFrame extends JFrame {
         repaint();
     }
     
+    /**
+     * Plays a sound effect file given its file name.
+     * The sound will not play if the game is currently muted.
+     * 
+     * @param soundFileName The name of the sound file to be played.
+     */
     public void playSound(String soundFileName) {
         if (isMuted) {
             return; // Skip sound playing if the game is muted
@@ -83,6 +89,13 @@ public class MainFrame extends JFrame {
         }
     }
     
+    /**
+     * Fades out the currently playing background music (if any) and then starts
+     * fading in the newly specified background music. This creates a smooth
+     * transition between different audio tracks (e.g. from Menu to InGame).
+     * 
+     * @param soundFileName The name of the new background music file to play.
+     */
     public void fadeToBackgroundMusic(String soundFileName) {
         boolean sameMusic = soundFileName.equals(currentMusic);
         currentMusic = soundFileName;
@@ -144,6 +157,11 @@ public class MainFrame extends JFrame {
         }
     }
 
+    /**
+     * Helper method to load and play a new background music track on a continuous loop.
+     * 
+     * @param soundFileName The name of the sound file to be played as background music.
+     */
     private void playNewMusic(String soundFileName) {
         try {
             String soundPath = "/pikachu/sound/" + soundFileName;
@@ -170,10 +188,22 @@ public class MainFrame extends JFrame {
         }
     }
     
+    /**
+     * Checks whether the game's audio is currently muted.
+     * 
+     * @return true if the audio is muted, false otherwise.
+     */
     public boolean isMuted() {
         return isMuted;
     }
 
+    /**
+     * Sets the mute state of the game's audio.
+     * If muted, all currently playing sounds are stopped. If unmuted,
+     * the current background music is resumed.
+     * 
+     * @param isMuted true to mute the audio, false to unmute.
+     */
     public void setMuted(boolean isMuted) {
         this.isMuted = isMuted;
         if (isMuted) {

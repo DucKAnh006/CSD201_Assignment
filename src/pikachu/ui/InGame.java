@@ -328,7 +328,9 @@ public class InGame extends JPanel {
     }
 
     /**
-     * Get image from folder and mapping into an array
+     * Loads Pokémon piece images from the resources folder and scales them dynamically
+     * to fit the grid layout based on the available screen space. The scaled images
+     * are stored in the pieceIcons array for rendering on the board.
      */
     private void getImage() {
         // --- Dynamic Scaling Logic ---
