@@ -41,4 +41,24 @@ public class MainFrame extends JFrame {
         revalidate();
         repaint();
     }
+
+    public void playSound(String soundFileName) {
+        try {
+            String soundPath = "/pikachu/sound/" + soundFileName;
+            java.net.URL soundURL = MainFrame.class.getResource(soundPath);
+
+            if (soundURL != null) {
+                javax.sound.sampled.AudioInputStream audioIn = javax.sound.sampled.AudioSystem.getAudioInputStream(soundURL);
+                javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
+                clip.open(audioIn);
+                clip.start();
+
+                Timer timer = new Timer(3000, e -> clip.close());
+                timer.setRepeats(false);
+                timer.start();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
