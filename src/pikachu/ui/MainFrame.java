@@ -174,8 +174,9 @@ public class MainFrame extends JFrame {
                 
                 if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
                     FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-                    float targetMax = Math.min(gainControl.getMaximum(), 0.0f);
-                    gainControl.setValue(targetMax); // Start at normal volume immediately
+                    // Reduce volume by approx 25% by setting max gain to -5.0f instead of 0.0f
+                    float targetMax = Math.min(gainControl.getMaximum(), -5.0f);
+                    gainControl.setValue(targetMax); // Start at lower volume immediately
                 }
                 
                 clip.start();

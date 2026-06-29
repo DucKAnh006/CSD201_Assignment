@@ -100,6 +100,9 @@ public class Tutorial extends JPanel {
     // --- Timer Components ---
     private JProgressBar timeBar;
     private final int MAX_TIME = 600;     // Maximum time allowed per level (in seconds)
+    
+    // --- Background ---
+    private Image backgroundImage;
 
     // --- Tutorial UI Components ---
     private JPanel overlayPanel;
@@ -147,9 +150,30 @@ public class Tutorial extends JPanel {
         this.cols = 15;
         // Set layout for the game panel to a grid matching the matrix size
         gamePanel.setLayout(new GridLayout(this.rows, this.cols, 0, 0));
+        gamePanel.setOpaque(false);
+
+        try {
+            java.net.URL bgURL = getClass().getResource("/pikachu/img/game_background.png");
+            if (bgURL == null) {
+                bgURL = getClass().getResource("/img/game_background.png");
+            }
+            if (bgURL != null) {
+                backgroundImage = new ImageIcon(bgURL).getImage();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         getImage();
         initUI();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
     }
 
     /**
@@ -160,24 +184,36 @@ public class Tutorial extends JPanel {
         this.setLayout(new BorderLayout());
         
         JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setOpaque(false);
         
         // --- Base Game Panel ---
         JPanel basePanel = new JPanel(new BorderLayout());
+        basePanel.setOpaque(false);
 
         // --- Left Panel: Displays player stats (Level, Score, Swaps) ---
-        JPanel leftPanel = new JPanel();
-        leftPanel.setPreferredSize(new Dimension(100, 900));
-        leftPanel.setBackground(new Color(230, 230, 230));
-        leftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 20));
+        JPanel leftPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                g.setColor(new Color(0, 0, 0, 150)); // Semi-transparent dark background for visibility
+                g.fillRect(0, 0, getWidth(), getHeight());
+                super.paintComponent(g);
+            }
+        };
+        leftPanel.setPreferredSize(new Dimension(150, 900));
+        leftPanel.setOpaque(false);
+        leftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 30));
 
         levelLabel = new JLabel("Level: " + currentLevel);
-        levelLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        levelLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        levelLabel.setForeground(Color.WHITE);
 
         scoreLabel = new JLabel("Score: " + score);
-        scoreLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        scoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        scoreLabel.setForeground(Color.WHITE);
 
         swapsLabel = new JLabel("Swaps: " + swapsAvailable);
-        swapsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        swapsLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        swapsLabel.setForeground(Color.WHITE);
 
         leftPanel.add(levelLabel);
         leftPanel.add(scoreLabel);
@@ -188,29 +224,62 @@ public class Tutorial extends JPanel {
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setPreferredSize(new Dimension(1100, 900));
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        rightPanel.setOpaque(false);
 
         // Time Bar setup at the top of the right panel
-        timeBar = new JProgressBar(0, MAX_TIME);
-        timeBar.setValue(MAX_TIME);
+        timeBar = new JProgressBar(0, MAX_TIME * 1000) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                int w = getWidth();
+                int h = getHeight();
+                
+                // Draw dark background
+                g2d.setColor(new Color(30, 30, 30, 150));
+                g2d.fillRoundRect(0, 0, w, h, 15, 15);
+                
+                int fillWidth = (int) (w * getPercentComplete());
+                if (fillWidth > 0) {
+                    Color startColor = new Color(0, 200, 0); // Green
+                    Color endColor = new Color(150, 255, 150);
+                    
+                    GradientPaint gp = new GradientPaint(0, 0, startColor, 0, h, endColor);
+                    g2d.setPaint(gp);
+                    g2d.fillRoundRect(0, 0, fillWidth, h, 15, 15);
+                }
+                
+                g2d.dispose();
+            }
+        };
+        timeBar.setValue(MAX_TIME * 1000);
         timeBar.setPreferredSize(new Dimension(1260, 25));
-        timeBar.setStringPainted(true);
-        timeBar.setForeground(Color.GREEN);
+        timeBar.setStringPainted(false);
+        timeBar.setOpaque(false);
+        timeBar.setBorder(BorderFactory.createEmptyBorder());
         rightPanel.add(timeBar, BorderLayout.NORTH);
 
         // Wrapper panel to keep the game board centered
         JPanel gridWrapper = new JPanel(new GridBagLayout());
+        gridWrapper.setOpaque(false);
         gridWrapper.add(gamePanel);
         rightPanel.add(gridWrapper, BorderLayout.CENTER);
 
         // --- Bottom Panel: Action buttons (Mute, Swap, New Game, Menu) ---
-        JPanel bottomButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 10));
+        JPanel bottomButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        bottomButtonsPanel.setOpaque(false);
 
         btnMute = new JButton(isMuted ? "Unmute" : "Mute");
+        styleButton(btnMute);
         defaultButtonBorder = btnMute.getBorder();
         
         btnSwap = new JButton("Swap Matrix");
+        styleButton(btnSwap);
         btnNewGame = new JButton("New Game");
+        styleButton(btnNewGame);
         btnMenu = new JButton("Menu");
+        styleButton(btnMenu);
 
         bottomButtonsPanel.add(btnMute);
         bottomButtonsPanel.add(btnSwap);
@@ -319,6 +388,10 @@ public class Tutorial extends JPanel {
                 int h = layeredPane.getHeight();
                 basePanel.setBounds(0, 0, w, h);
                 overlayPanel.setBounds(0, 0, w, h);
+                basePanel.revalidate();
+                basePanel.repaint();
+                overlayPanel.revalidate();
+                overlayPanel.repaint();
             }
         });
 
@@ -326,6 +399,14 @@ public class Tutorial extends JPanel {
 
         // Initialize level data and start the gameplay loop
         startGame();
+    }
+    
+    private void styleButton(JButton button) {
+        button.setPreferredSize(new Dimension(160, 45));
+        button.setFont(new Font("Arial", Font.BOLD, 18));
+        button.setBackground(new Color(255, 204, 0));
+        button.setForeground(Color.BLACK);
+        button.setFocusPainted(false);
     }
     
     /**
@@ -564,12 +645,12 @@ public class Tutorial extends JPanel {
                     firstButton = btn;
                     firstSelected = currentClick;
                     firstSelected.setBorder(BorderFactory.createLineBorder(Color.RED, 3)); // Highlight selection
-                    playSound("sound2.wav");
+                    parent.playSound("sound2.wav");
                 } // State 2: User clicks the exact same button again (Deselect)
                 else if (firstSelected == currentClick) {
                     firstSelected.setBorder(BorderFactory.createEmptyBorder());
                     firstSelected = null;
-                    playSound("sound1.wav");
+                    parent.playSound("sound1.wav");
                 } // State 3: A second, different button is selected (Attempt Connection)
                 else {
                     int id1 = firstSelected.getImageID();
@@ -613,7 +694,7 @@ public class Tutorial extends JPanel {
                             timer.setRepeats(false);
                             timer.start();
 
-                            playSound("sound5.wav");
+                            parent.playSound("sound5.wav");
 
                             // Win Condition Check
                             if (progress >= numberOfImage) {
@@ -625,14 +706,14 @@ public class Tutorial extends JPanel {
                                 score -= 10; // Penalty
                             }
                             firstSelected.setBorder(BorderFactory.createEmptyBorder());
-                            playSound("sound1.wav");
+                            parent.playSound("sound1.wav");
                         }
                     } // IDs do not match (Different images selected)
                     else {
                         if (score > 0) {
                             score -= 10; // Penalty
                         }
-                        playSound("sound1.wav");
+                        parent.playSound("sound1.wav");
                         firstSelected.setBorder(BorderFactory.createEmptyBorder());
                     }
 
@@ -698,38 +779,5 @@ public class Tutorial extends JPanel {
         gameLogic = new GameLogic(m);
         progress = 0;
         level(gameLogic.getMatrix());
-    }
-
-    /**
-     * Plays a sound file given its file name.
-     *
-     * @param soundFileName The name of the sound file to be played.
-     */
-    public void playSound(String soundFileName) {
-        if (isMuted) {
-            return; // Skip sound playing if the game is muted
-        }
-
-        try {
-            String soundPath = "/pikachu/sound/" + soundFileName;
-            java.net.URL soundURL = InGame.class.getResource(soundPath);
-
-            if (soundURL != null) {
-                javax.sound.sampled.AudioInputStream audioIn = javax.sound.sampled.AudioSystem.getAudioInputStream(soundURL);
-                javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
-                clip.open(audioIn);
-                clip.start();
-                Timer timer = new Timer(3000, t -> {
-                    clip.close();
-                });
-
-                timer.setRepeats(false);
-                timer.start();
-            } else {
-                System.out.println("Error: Can not find sound with path: " + soundFileName);
-            }
-        } catch (Exception e) {
-            System.out.println("Can not play sound: " + e.getMessage());
-        }
     }
 }
