@@ -84,7 +84,7 @@ public class InGame extends JPanel {
 
     // --- Game Stats & UI Components ---
     private int score = 0;               // Player's current score
-    private int swapsAvailable = 3;      // Number of matrix shuffles available to the player
+    private int swapsAvailable = 10;      // Number of matrix shuffles available to the player
     private boolean isMuted = false;     // Flag to control sound effects
 
     private JLabel scoreLabel;
@@ -97,6 +97,9 @@ public class InGame extends JPanel {
     private Timer countdownTimer;
     private int timeLeft;
     private final int MAX_TIME = 600;     // Maximum time allowed per level (in seconds)
+    
+    // --- Background ---
+    private Image backgroundImage;
 
     /**
      * Constructs the InGame panel.
@@ -108,6 +111,7 @@ public class InGame extends JPanel {
      */
     public InGame(int x, int y, String difficulty, MainFrame parent) {
         this.parent = parent;
+        this.isMuted = parent.isMuted();
 
         // Add 2 to rows and cols to account for the outer empty borders required for pathfinding
         this.rows = x + 2;
@@ -121,9 +125,30 @@ public class InGame extends JPanel {
 
         // Set layout for the game panel to a grid matching the matrix size
         gamePanel.setLayout(new GridLayout(this.rows, this.cols, 0, 0));
+        gamePanel.setOpaque(false);
+
+        try {
+            java.net.URL bgURL = getClass().getResource("/pikachu/img/game_background.png");
+            if (bgURL == null) {
+                bgURL = getClass().getResource("/img/game_background.png");
+            }
+            if (bgURL != null) {
+                backgroundImage = new ImageIcon(bgURL).getImage();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         getImage();
         initUI();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
     }
 
     /**
@@ -134,19 +159,29 @@ public class InGame extends JPanel {
         this.setLayout(new BorderLayout());
 
         // --- Left Panel: Displays player stats (Level, Score, Swaps) ---
-        JPanel leftPanel = new JPanel();
-        leftPanel.setPreferredSize(new Dimension(100, 900));
-        leftPanel.setBackground(new Color(230, 230, 230));
-        leftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 20));
+        JPanel leftPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                g.setColor(new Color(0, 0, 0, 150)); // Semi-transparent dark background for visibility
+                g.fillRect(0, 0, getWidth(), getHeight());
+                super.paintComponent(g);
+            }
+        };
+        leftPanel.setPreferredSize(new Dimension(150, 900));
+        leftPanel.setOpaque(false);
+        leftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 30));
 
         levelLabel = new JLabel("Level: " + currentLevel);
-        levelLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        levelLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        levelLabel.setForeground(Color.WHITE);
 
         scoreLabel = new JLabel("Score: " + score);
-        scoreLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        scoreLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        scoreLabel.setForeground(Color.WHITE);
 
         swapsLabel = new JLabel("Swaps: " + swapsAvailable);
-        swapsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        swapsLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        swapsLabel.setForeground(Color.WHITE);
 
         leftPanel.add(levelLabel);
         leftPanel.add(scoreLabel);
@@ -157,31 +192,66 @@ public class InGame extends JPanel {
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setPreferredSize(new Dimension(1100, 900));
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        rightPanel.setOpaque(false);
 
         // Time Bar setup at the top of the right panel
-        timeBar = new JProgressBar(0, MAX_TIME);
-        timeBar.setValue(MAX_TIME);
+        timeBar = new JProgressBar(0, MAX_TIME * 1000) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                int w = getWidth();
+                int h = getHeight();
+                
+                // Draw dark background
+                g2d.setColor(new Color(30, 30, 30, 150));
+                g2d.fillRoundRect(0, 0, w, h, 15, 15);
+                
+                int fillWidth = (int) (w * getPercentComplete());
+                if (fillWidth > 0) {
+                    Color startColor = new Color(0, 200, 0); // Green
+                    Color endColor = new Color(150, 255, 150);
+                    
+                    GradientPaint gp = new GradientPaint(0, 0, startColor, 0, h, endColor);
+                    g2d.setPaint(gp);
+                    g2d.fillRoundRect(0, 0, fillWidth, h, 15, 15);
+                }
+                
+                g2d.dispose();
+            }
+        };
+        timeBar.setValue(MAX_TIME * 1000);
         timeBar.setPreferredSize(new Dimension(1260, 25));
-        timeBar.setStringPainted(true);
-        timeBar.setForeground(Color.GREEN);
+        timeBar.setStringPainted(false);
+        timeBar.setOpaque(false);
+        timeBar.setBorder(BorderFactory.createEmptyBorder());
         rightPanel.add(timeBar, BorderLayout.NORTH);
 
         // Wrapper panel to keep the game board centered
         JPanel gridWrapper = new JPanel(new GridBagLayout());
+        gridWrapper.setOpaque(false);
         gridWrapper.add(gamePanel);
         rightPanel.add(gridWrapper, BorderLayout.CENTER);
 
         // --- Bottom Panel: Action buttons (Mute, Swap, New Game, Menu) ---
-        JPanel bottomButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 10));
+        JPanel bottomButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        bottomButtonsPanel.setOpaque(false);
 
         btnMute = new JButton(isMuted ? "Unmute" : "Mute");
         JButton btnSwap = new JButton("Swap Matrix");
         JButton btnNewGame = new JButton("New Game");
         JButton btnMenu = new JButton("Menu");
 
+        styleButton(btnMute);
+        styleButton(btnSwap);
+        styleButton(btnNewGame);
+        styleButton(btnMenu);
+
         // Action: Toggle Sound
         btnMute.addActionListener(e -> {
             isMuted = !isMuted;
+            parent.setMuted(isMuted);
             btnMute.setText(isMuted ? "Unmute" : "Mute");
         });
 
@@ -189,10 +259,13 @@ public class InGame extends JPanel {
         btnSwap.addActionListener(e -> {
             if (swapsAvailable > 0) {
                 swapsAvailable--;
+                score -= 50;
+                scoreLabel.setText("Score: " + score);
                 swapsLabel.setText("Swaps: " + swapsAvailable);
                 level(gameLogic.swapMatrix()); // Reload the level with the new matrix
                 playSound("sound4.wav");
             } else {
+                playSound("sound1.wav");
                 JOptionPane.showMessageDialog(this, "No swaps available!");
             }
         });
@@ -227,6 +300,14 @@ public class InGame extends JPanel {
         startGame();
     }
 
+    private void styleButton(JButton button) {
+        button.setPreferredSize(new Dimension(160, 45));
+        button.setFont(new Font("Arial", Font.BOLD, 18));
+        button.setBackground(new Color(255, 204, 0));
+        button.setForeground(Color.BLACK);
+        button.setFocusPainted(false);
+    }
+
     /**
      * Displays an option dialog to pause the game and choose between continuing
      * or going to the main menu.
@@ -255,6 +336,15 @@ public class InGame extends JPanel {
     }
 
     /**
+     * Plays a sound file given its file name.
+     *
+     * @param soundFileName The name of the sound file to be played.
+     */
+    public void playSound(String soundFileName) {
+        parent.playSound(soundFileName);
+    }
+
+    /**
      * Sets up and starts the countdown timer for the current level.
      */
     private void setupTimer() {
@@ -262,19 +352,13 @@ public class InGame extends JPanel {
             countdownTimer.stop();
         }
 
-        timeLeft = MAX_TIME;
+        timeLeft = MAX_TIME * 1000;
+        timeBar.setMaximum(MAX_TIME * 1000);
         timeBar.setValue(timeLeft);
 
-        countdownTimer = new Timer(1000, e -> {
-            timeLeft--;
+        countdownTimer = new Timer(50, e -> {
+            timeLeft -= 50;
             timeBar.setValue(timeLeft);
-
-            // Change progress bar color based on remaining time to alert the player
-            if (timeLeft <= (MAX_TIME - 2 * MAX_TIME / 10) && timeLeft > (MAX_TIME - 7 * MAX_TIME / 10)) {
-                timeBar.setForeground(Color.YELLOW); // Warning stage
-            } else if (timeLeft < (MAX_TIME - 7 * MAX_TIME / 10)) {
-                timeBar.setForeground(Color.RED);    // Critical stage
-            }
 
             // Trigger Game Over logic when time hits zero
             if (timeLeft <= 0) {
@@ -289,6 +373,7 @@ public class InGame extends JPanel {
      * Handles the logic when the game is over (e.g., time runs out).
      */
     private void handleGameOver() {
+        playSound("sound1.wav");
         JOptionPane.showMessageDialog(parent, "Time's up! You lose.");
         MenuUI menu = new MenuUI(parent);
         parent.switchPanel(menu);
@@ -298,7 +383,6 @@ public class InGame extends JPanel {
      * Starts the game by resetting necessary stats and generating the matrix.
      */
     private void startGame() {
-        swapsAvailable = 3;
         swapsLabel.setText("Swaps: " + swapsAvailable);
         levelLabel.setText("Level: " + currentLevel);
 
@@ -314,7 +398,9 @@ public class InGame extends JPanel {
     }
 
     /**
-     * Get image from folder and mapping into an array
+     * Loads Pokémon piece images from the resources folder and scales them dynamically
+     * to fit the grid layout based on the available screen space. The scaled images
+     * are stored in the pieceIcons array for rendering on the board.
      */
     private void getImage() {
         // --- Dynamic Scaling Logic ---
@@ -472,8 +558,16 @@ public class InGame extends JPanel {
 
                             // Deadlock check: If no moves remain, force a matrix shuffle
                             if (!gameLogic.checkValidMatrix() && progress < numberOfImage) {
-                                level(gameLogic.swapMatrix());
-                                playSound("sound4.wav");
+                                if (swapsAvailable == 0) {
+                                    gamePanel.repaint();
+                                    handleGameOver();
+                                } else {
+                                    level(gameLogic.swapMatrix());
+                                    swapsAvailable--;
+                                    score -= 30;
+                                    swapsLabel.setText("Swaps: " + swapsAvailable);
+                                    playSound("sound1.wav");
+                                }
                             }
 
                             timer.setRepeats(false);
@@ -527,6 +621,7 @@ public class InGame extends JPanel {
         // Proceed to next level if available
         if (currentLevel <= maxLevel) {
             JOptionPane.showMessageDialog(parent, "Congratulations! You finished level " + (currentLevel - 1));
+            swapsAvailable++;
             startGame();
         } // All levels completed - Game Finished
         else {
@@ -540,39 +635,6 @@ public class InGame extends JPanel {
             // Return to main menu
             MenuUI menu = new MenuUI(parent);
             parent.switchPanel(menu);
-        }
-    }
-
-    /**
-     * Plays a sound file given its file name.
-     *
-     * @param soundFileName The name of the sound file to be played.
-     */
-    public void playSound(String soundFileName) {
-        if (isMuted) {
-            return; // Skip sound playing if the game is muted
-        }
-
-        try {
-            String soundPath = "/pikachu/sound/" + soundFileName;
-            java.net.URL soundURL = InGame.class.getResource(soundPath);
-
-            if (soundURL != null) {
-                javax.sound.sampled.AudioInputStream audioIn = javax.sound.sampled.AudioSystem.getAudioInputStream(soundURL);
-                javax.sound.sampled.Clip clip = javax.sound.sampled.AudioSystem.getClip();
-                clip.open(audioIn);
-                clip.start();
-                Timer timer = new Timer(3000, t -> {
-                    clip.close();
-                });
-
-                timer.setRepeats(false);
-                timer.start();
-            } else {
-                System.out.println("Error: Can not find sound with path: " + soundFileName);
-            }
-        } catch (Exception e) {
-            System.out.println("Can not play sound: " + e.getMessage());
         }
     }
 }
